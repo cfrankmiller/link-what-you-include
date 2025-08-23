@@ -1,0 +1,34 @@
+# Copyright (c) 2025 Environmental Systems Research Institute, Inc.
+# SPDX-License-Identifier: Apache-2.0
+---
+Checks: '-*,
+  bugprone-*,
+  cppcoreguidelines-*,
+  google-explicit-constructor,
+  misc-definitions-in-headers,
+  misc-include-cleaner,
+  misc-misplaced-const,
+  misc-non-copyable-objects,
+  misc-redundant-expression,
+  misc-unused-parameters,
+  modernize-*,
+  performance-*,
+  readability-braces-around-statements,
+  readability-const-return-type,
+  readability-container-size-empty,
+  readability-else-after-return,
+  readability-identifier-naming,
+  readability-inconsistent-declaration-parameter-name,
+  readability-isolate-declaration,
+  readability-non-const-parameter,
+  readability-redundant-smartptr-get,
+  readability-redundant-string-cstr,
+  readability-redundant-string-init,
+  readability-static-accessed-through-instance,
+  readability-static-definition-in-anonymous-namespace,
+  readability-string-compare,
+  '
+CheckOptions:
+  cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: 'true'
+  readability-container-size-empty.ExcludedComparisonTypes: '::std::array;::std::basic_string;::std::basic_string_view'
+...
