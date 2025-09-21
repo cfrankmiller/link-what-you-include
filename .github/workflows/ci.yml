@@ -1,0 +1,40 @@
+name: LWYI CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - name: Install Conan
+        uses: conan-io/setup-conan@v1
+        with:
+          audit_token: ${{ secrets.CONAN_AUDIT_TOKEN }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Provision
+        run: |
+          sudo apt install -y libclang-18-dev
+          conan install . -s compiler.cppstd=17 -s build_type=Release --build=missing -of build
+
+      - name: Build
+        run: |
+          cmake -S. -Bbuild -GNinja \
+            -DCMAKE_TOOLCHAIN_FILE=./build/conan_build/generators/conan_toolchain.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DClang_ROOT=/usr/lib/llvm-18
+          cmake --build build
+
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure
