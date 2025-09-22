@@ -144,7 +144,7 @@ auto location_(const simdjson::ondemand::document& doc, const char* data, size_t
   -> std::string
 {
   const char* location = nullptr;
-  if (auto error = doc.current_location().get(location))
+  if (doc.current_location().get(location))
   {
     return "line ?, column ?";
   }
