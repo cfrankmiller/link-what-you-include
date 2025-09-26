@@ -32,29 +32,50 @@ jobs:
 
       - name: Install libclang on windows
         if: ${{ startsWith(matrix.os, 'windows') }}  
-        shell: bash
+        shell: cmake -P {0}
         run: |
-          llvmArchive="clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz"
-          llvmUrl="https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/$llvmArchive"
-          installDir="llvm-18.1.8"
-          mkdir $installDir
-          echo "url: $llvmUrl"
-          curl -L -o $llvmArchive $llvmUrl
-          tar -xf $llvmArchive -C $installDir --strip-components=1
-          echo "Clang_ROOT=$GITHUB_WORKSPACE/$installDir" >> $GITHUB_ENV
+          set(QT_MIRRORS
+            download.qt.io
+            mirrors.ocf.berkeley.edu/qt
+            ftp.fau.de/qtproject
+            mirrors.sau.edu.cn/qt
+            )
+          foreach(qt_mirror ${QT_MIRRORS})
+            set(libclang_url https://${qt_mirror}/development_releases/prebuilt/libclang/libclang-release_18.1.7-based-windows-vs2019_64.7z)
+            foreach(retry RANGE 10)
+              file(DOWNLOAD ${libclang_url} ./libclang.7z)
+              file(SIZE ./libclang.7z fileSize)
+              if(fileSize GREATER 0)
+                break()
+              endif()
+            endforeach()
+
+            file(SIZE ./libclang.7z fileSize)
+            if (fileSize GREATER 0)
+              break()
+            endif()
+          endforeach()
+
+          execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvf ./libclang.7z)
+
+          file(TO_CMAKE_PATH "$ENV{GITHUB_WORKSPACE}/libclang" libclang_dir)
+          file(APPEND "$ENV{GITHUB_OUTPUT}" "Clang_ROOT=${libclang_dir}")
 
       - name: Conan install
         run: |
           conan install . -s compiler.cppstd=17 -s build_type=Release --build=missing -of build
           echo "CMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/build/conan_build/generators/conan_toolchain.cmake" >> $GITHUB_ENV
 
-      - name: MSVC environment
+      - name: Build on Linux
+        if: ${{ startsWith(matrix.os, 'linux') }}  
+        run: |
+          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+
+      - name: Build on Windows
         if: ${{ startsWith(matrix.os, 'windows') }}  
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-
-      - name: Build
-        run: |
           cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release
           cmake --build build
 
