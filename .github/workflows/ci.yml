@@ -29,15 +29,15 @@ jobs:
 
       - name: Install libclang on windows
         if: ${{ matrix.os == 'windows-latest' }}
-        shell: pwsh
+        shell: bash
         run: |
-          $llvmArchive = "clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz"
-          $llvmUrl = "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/$llvmArchive"
-          $installDir = "$env:RUNNER_TEMP\llvm-18.1.8"
+          llvmArchive="clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz"
+          llvmUrl="https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/$llvmArchive"
+          installDir="llvm-18.1.8"
           mkdir $installDir
-          Invoke-WebRequest -Uri $llvmUrl -OutFile "$env:RUNNER_TEMP\$llvmArchive"
-          tar -xf "$env:RUNNER_TEMP\$llvmArchive" -C $installDir --strip-components=1
-          Add-Content -Path $env:GITHUB_ENV -Value "CLANG_ROOT_DIR=$installDir"
+          curl -o $llvmArchive $llvmUrl
+          tar -xf $llvmArchive -C $installDir --strip-components=1
+          echo "CLANG_ROOT_DIR=$GITHUB_WORKSPACE/$installDir" >> $GITHUB_ENV
 
       - name: Conan install
         run: |
