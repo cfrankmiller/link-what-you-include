@@ -62,6 +62,7 @@ jobs:
           file(APPEND "$ENV{GITHUB_ENV}" "Clang_ROOT=${libclang_dir}\n")
 
       - name: Conan install
+        shell: bash
         run: |
           conan install . -s compiler.cppstd=17 -s build_type=Release --build=missing -of build
           echo "CMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/build/conan_build/generators/conan_toolchain.cmake" >> $GITHUB_ENV
