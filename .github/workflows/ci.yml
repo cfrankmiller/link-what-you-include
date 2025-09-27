@@ -59,7 +59,7 @@ jobs:
           execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvf ./libclang.7z)
 
           file(TO_CMAKE_PATH "$ENV{GITHUB_WORKSPACE}/libclang" libclang_dir)
-          file(APPEND "$ENV{GITHUB_OUTPUT}" "Clang_ROOT=${libclang_dir}")
+          file(APPEND "$ENV{GITHUB_ENV}" "Clang_ROOT=${libclang_dir}\n")
 
       - name: Conan install
         run: |
@@ -67,7 +67,7 @@ jobs:
           echo "CMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/build/conan_build/generators/conan_toolchain.cmake" >> $GITHUB_ENV
 
       - name: Build on Linux
-        if: ${{ startsWith(matrix.os, 'linux') }}  
+        if: ${{ startsWith(matrix.os, 'ubuntu') }}  
         run: |
           cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release
           cmake --build build
