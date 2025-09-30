@@ -40,6 +40,25 @@ if(ENABLE_CLANG_TIDY)
 endif()
 
 ################################################################################
+## configure build tree to mirror install tree
+
+if(IS_ABSOLUTE ${CMAKE_INSTALL_BINDIR})
+  message(FATAL_ERROR "An absolute path for CMAKE_INSTALL_BINDIR is not supported")
+endif()
+if(IS_ABSOLUTE ${CMAKE_INSTALL_DATADIR})
+  message(FATAL_ERROR "An absolute path for CMAKE_INSTALL_DATADIR is not supported")
+endif()
+
+get_property(is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if(is_multi_config)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}_$<LOWER_CASE:$<CONFIG>>)
+else()
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
+endif()
+
+set(LWYI_install_resource_dir ${CMAKE_INSTALL_DATADIR}/lwyi)
+
+################################################################################
 ## dependencies
 
 enable_language(C) # needed for clang
