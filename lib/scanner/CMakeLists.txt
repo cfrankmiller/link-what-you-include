@@ -7,6 +7,8 @@ target_sources(lib_scanner
     include/scanner/include.hpp
     include/scanner/scan.hpp
   PRIVATE
+    src/executable_path.hpp
+    src/executable_path.cpp
     src/merge_includes.hpp
     src/merge_includes.cpp
     src/scan.cpp
@@ -27,18 +29,17 @@ target_link_libraries(lib_scanner
     clangTooling
   )
 
-# get resource directory
+# copy/install the clang resource directory into our build/install trees
 get_target_property(clang_exe clang LOCATION)
+message(STATUS "using clang: ${clang_exe}")
+message(STATUS "copying clang_resource_dir: \"${clang_resource_dir}\"")
 execute_process(
   COMMAND ${clang_exe} -print-resource-dir
   OUTPUT_VARIABLE clang_resource_dir)
 string(STRIP ${clang_resource_dir} clang_resource_dir)
 cmake_path(SET clang_resource_dir ${clang_resource_dir})
-target_compile_definitions(lib_scanner
-  PRIVATE "LWYI_CLANG_RESOURCE_DIR=${clang_resource_dir}"
-  )
-message(STATUS "using clang: ${clang_exe}")
-message(STATUS "clang_resource_dir: \"${clang_resource_dir}\"")
+file(COPY ${clang_resource_dir}/ DESTINATION ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/clang_resource)
+install(DIRECTORY ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/clang_resource DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if(BUILD_TESTING)
   add_executable(lib_scanner_test
