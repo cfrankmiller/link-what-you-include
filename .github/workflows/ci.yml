@@ -1,0 +1,88 @@
+name: LWYI CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Conan
+        uses: conan-io/setup-conan@v1
+        with:
+          audit_token: ${{ secrets.CONAN_AUDIT_TOKEN }}
+
+      - name: Conan install
+        shell: bash
+        run: |
+          conan install . -s compiler.cppstd=17 -s build_type=Release --build=missing -of build
+          echo "CMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/build/conan_build/generators/conan_toolchain.cmake" >> $GITHUB_ENV
+
+      - name: Install libclang on ubuntu
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt install -y libclang-18-dev
+          echo "Clang_ROOT=/usr/lib/llvm-18" >> $GITHUB_ENV
+
+      - name: Install libclang
+        if: runner.os != 'Linux'
+        shell: cmake -P {0}
+        run: |
+          if ("${{ runner.os }}" STREQUAL "Linux")
+            set(libclang libclang-release_18.1.7-based-linux-Ubuntu22.04-gcc11.4-x86_64.7z)
+          elseif ("${{ runner.os }}" STREQUAL "macOS")
+            set(libclang libclang-release_18.1.7-based-macos-universal.7z)
+          elseif ("${{ runner.os }}" STREQUAL "Windows")
+            set(libclang libclang-release_18.1.7-based-windows-vs2019_64.7z)
+          endif()
+
+          set(QT_MIRRORS
+            download.qt.io
+            mirrors.ocf.berkeley.edu/qt
+            ftp.fau.de/qtproject
+            mirrors.sau.edu.cn/qt
+            )
+          foreach(qt_mirror ${QT_MIRRORS})
+            set(libclang_url https://${qt_mirror}/development_releases/prebuilt/libclang/${libclang})
+            foreach(retry RANGE 10)
+              file(DOWNLOAD ${libclang_url} ./libclang.7z)
+              file(SIZE ./libclang.7z fileSize)
+              if(fileSize GREATER 0)
+                break()
+              endif()
+            endforeach()
+            file(SIZE ./libclang.7z fileSize)
+            if (fileSize GREATER 0)
+              break()
+            endif()
+          endforeach()
+          file(SIZE ./libclang.7z fileSize)
+          if (fileSize EQUAL 0)
+            message(FATAL_ERROR "Failed to download libclang")
+          endif()
+          execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvf ./libclang.7z)
+          file(TO_CMAKE_PATH "$ENV{GITHUB_WORKSPACE}/libclang" libclang_dir)
+          file(APPEND "$ENV{GITHUB_ENV}" "Clang_ROOT=${libclang_dir}\n")
+
+      - name: Setup msvc environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build
+        run: |
+          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure
