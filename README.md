@@ -49,7 +49,13 @@ Esri.
 
 ### How to build
 
-Conan can be used to get all the dependencies except for Clang.
+Conan can be used to get all the dependencies except for Clang. Clang is
+expected to be version 18. For ubuntu, this can be installed with
+
+```
+$ sudo apt install libclang-18-dev
+$ export Clang_ROOT=/usr/lib/llvm-18
+```
 
 ```
 $ conan install . -s build_type=Debug --build=missing -of build
