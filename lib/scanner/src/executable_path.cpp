@@ -4,12 +4,15 @@
 #include <src/executable_path.hpp>
 
 #include <array>
+#include <cstddef>
+#include <filesystem>
 
 #ifdef WIN32
 #include <Windows.h>
 #elif __APPLE__
 #include <mach-o/dyld.h>
 #else
+#include <sys/types.h>
 #include <unistd.h>
 #endif
 
