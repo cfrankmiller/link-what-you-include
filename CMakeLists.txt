@@ -97,3 +97,7 @@ add_subdirectory(lib/tidy)
 add_subdirectory(lib/util)
 add_subdirectory(app)
 
+################################################################################
+## install
+
+install(FILES cmake/link_what_you_include.cmake DESTINATION ${LWYI_install_resource_dir})
