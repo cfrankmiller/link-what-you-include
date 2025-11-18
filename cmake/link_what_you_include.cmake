@@ -116,7 +116,14 @@ function(lwyi__write_json)
       set(interface_dependencies)
     endif()
 
+    # dependencies
     get_target_property(dependencies ${target} LINK_LIBRARIES)
+    if(dependencies)
+      list(FILTER dependencies EXCLUDE REGEX "\\$<LINK_ONLY:([^>]*)>")
+    else()
+      set(dependencies)
+    endif()
+
     get_target_property(interface_defines ${target} INTERFACE_COMPILE_DEFINITIONS)
     get_target_property(interface_options ${target} INTERFACE_COMPILE_OPTION)
     get_target_property(interface_include_prefixes ${target} LWYI__prefixes)
