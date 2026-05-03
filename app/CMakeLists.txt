@@ -2,20 +2,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
 add_executable(lwyi)
-target_sources(lwyi PRIVATE
-  src/tidy_tool.hpp
-  src/tidy_tool.cpp
-  src/graph_tool.hpp
-  src/graph_tool.cpp
-  src/main.cpp
-  src/run_lwyi.hpp
-  src/run_lwyi.cpp
-  src/run_lwyi_on_target.hpp
-  src/run_lwyi_on_target.cpp
-  src/run_tool.hpp
-  src/run_tool.cpp
+target_sources(lwyi
+  PRIVATE FILE_SET private_headers TYPE HEADERS FILES
+    src/tidy_tool.hpp
+    src/graph_tool.hpp
+    src/run_lwyi.hpp
+    src/run_lwyi_on_target.hpp
+    src/run_tool.hpp
+  PRIVATE
+    src/tidy_tool.cpp
+    src/graph_tool.cpp
+    src/main.cpp
+    src/run_lwyi.cpp
+    src/run_lwyi_on_target.cpp
+    src/run_tool.cpp
   )
-target_include_directories(lwyi PRIVATE .)
 target_link_libraries(
   lwyi
   PRIVATE 
