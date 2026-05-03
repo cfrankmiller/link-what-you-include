@@ -3,20 +3,18 @@
 
 add_library(lib_scanner)
 target_sources(lib_scanner
-  PUBLIC FILE_SET HEADERS BASE_DIRS include FILES
+  PUBLIC FILE_SET interface_headers TYPE HEADERS BASE_DIRS include FILES
     include/scanner/include.hpp
     include/scanner/scan.hpp
-  PRIVATE
+  PRIVATE FILE_SET private_headers TYPE HEADERS FILES
     src/executable_path.hpp
-    src/executable_path.cpp
     src/merge_includes.hpp
+    src/scan_impl.hpp
+  PRIVATE
+    src/executable_path.cpp
     src/merge_includes.cpp
     src/scan.cpp
-    src/scan_impl.hpp
     src/scan_impl.cpp
-  )
-target_include_directories(lib_scanner
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   )
 target_link_libraries(lib_scanner
   PUBLIC
@@ -63,9 +61,11 @@ target_compile_definitions(lib_scanner
   )
 
 if(BUILD_TESTING)
-  add_executable(lib_scanner_test
-    test/scan_test.cpp
+  add_executable(lib_scanner_test)
+  target_sources(lib_scanner_test
+    PRIVATE test/scan_test.cpp
     )
+  # allow access to private headers
   target_include_directories(lib_scanner_test
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
     )
