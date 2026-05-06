@@ -274,3 +274,7 @@ WhitespaceSensitiveMacros:
   - STRINGIZE
 ...
 
+---
+Language: Json
+BasedOnStyle: LLVM
+IndentWidth: 2
