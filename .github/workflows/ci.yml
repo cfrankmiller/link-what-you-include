@@ -1,0 +1,60 @@
+# Copyright (c) 2025 Environmental Systems Research Institute, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+name: LWYI CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+
+    steps:
+      - name: Setup msvc environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Setup Conan
+        uses: conan-io/setup-conan@v1
+        with:
+          audit_token: ${{ secrets.CONAN_AUDIT_TOKEN }}
+          cache_packages: true
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Conan install
+        shell: bash
+        run: |
+          conan install . -s compiler.cppstd=17 -s build_type=Release --build=missing -of build
+          echo "CMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/build/conan_build/generators/conan_toolchain.cmake" >> $GITHUB_ENV
+
+      - name: Cache clangtooling
+        id: cache-clangtooling
+        uses: actions/cache@v5
+        with:
+          path: ./build/llvm
+          key: ${{ runner.os }}-output-${{ hashFiles('tools/build_clangtooling.sh') }}
+
+      - name: Build clangtooling
+        if: steps.cache-clangtooling.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          bash ./tools/build_clangtooling.sh
+
+      - name: Build
+        run: |
+          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=build/llvm
+          cmake --build build
+
+      - name: Run tests
+        run: |
+          ctest --test-dir build --output-on-failure
