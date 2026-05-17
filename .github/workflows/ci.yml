@@ -64,37 +64,23 @@ jobs:
           set(CTEST_BINARY_DIRECTORY ${{ github.workspace }}/build)
           set(CTEST_CMAKE_GENERATOR Ninja)
           set(CTEST_BUILD_NAME ${CMAKE_SYSTEM_NAME}.${CTEST_CONFIGURATION_TYPE})
-
-          set(CTEST_TLS_VERIFY OFF)
           
           #find_program(CTEST_COVERAGE_COMMAND NAMES gcov)
           #find_program(CTEST_MEMORYCHECK_COMMAND NAMES valgrind)
           #set(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE ${CTEST_SOURCE_DIRECTORY}/tests/valgrind.supp)
-          
-          ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
-          
-          ctest_start(Experimental)
-          
+
           find_package(Git)
           set(CTEST_UPDATE_VERSION_ONLY ON)
           set(CTEST_UPDATE_COMMAND "${GIT_EXECUTABLE}")
-          ctest_update(CAPTURE_CMAKE_ERROR result)
-          message(":: update result: ${result}")
           
-          ctest_configure(CAPTURE_CMAKE_ERROR result)
-          message(":: configure result: ${result}")
-
-          ctest_build(CAPTURE_CMAKE_ERROR result)
-          message(":: build result: ${result}")
-
-          ctest_test(CAPTURE_CMAKE_ERROR result)
-          message(":: test result: ${result}")
-
+          ctest_start(Experimental)
+          ctest_update()
+          ctest_configure()
+          ctest_build()
+          ctest_test()
           #ctest_coverage()
           #ctest_memcheck()
-
-          ctest_submit(CAPTURE_CMAKE_ERROR result)
-          message(":: submit result: ${result}")
+          ctest_submit()
 
       #- name: Build
       #  run: |
