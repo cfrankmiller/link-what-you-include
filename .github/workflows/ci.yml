@@ -1,0 +1,168 @@
+# Copyright (c) 2025 Environmental Systems Research Institute, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Build and test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 6 * * *'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+
+    steps:
+      - name: Setup msvc environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Setup Conan
+        uses: conan-io/setup-conan@v1
+        with:
+          cache_packages: true
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Conan install release
+        shell: bash
+        run: |
+          conan install . -s compiler.cppstd=17 -s build_type=Release --build=missing -of build/release
+
+      - name: Conan install debug
+        if: github.event_name == 'schedule' && runner.os == 'Linux'
+        shell: bash
+        run: |
+          conan install . -s compiler.cppstd=17 -s build_type=Debug --build=missing -of build/debug
+
+      - name: Cache clangtooling
+        id: cache-clangtooling
+        uses: actions/cache@v5
+        with:
+          path: ./build/llvm
+          key: ${{ runner.os }}-output-${{ hashFiles('tools/build_clangtooling.sh') }}
+
+      - name: Build clangtooling
+        if: steps.cache-clangtooling.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          bash ./tools/build_clangtooling.sh
+
+      - name: Enable clangtooling
+        shell: bash
+        run: |
+          echo "CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/build/llvm" >> $GITHUB_ENV
+
+      - name: Build and test
+        shell: ctest -VV -S {0}
+        run: |
+          include($ENV{GITHUB_WORKSPACE}/.github/workflows/common_ctest.cmake)
+
+          set(CTEST_CONFIGURATION_TYPE Release)
+          set(CTEST_SOURCE_DIRECTORY $ENV{GITHUB_WORKSPACE})
+          set(CTEST_BINARY_DIRECTORY $ENV{GITHUB_WORKSPACE}/build/release)
+          set(CTEST_BUILD_NAME ${CMAKE_SYSTEM_NAME}.${CTEST_CONFIGURATION_TYPE})
+
+          set(model Experimental)
+          if($ENV{GITHUB_EVENT_NAME} STREQUAL schedule)
+            set(model Nightly)
+          endif()
+
+          set(configure_opts
+            -DCMAKE_TOOLCHAIN_FILE=$ENV{GITHUB_WORKSPACE}/build/release/conan_build/generators/conan_toolchain.cmake
+            )
+
+          ctest_start(${model})
+          ctest_update()
+          ctest_configure(OPTIONS "${configure_opts}")
+          ctest_build()
+          ctest_test()
+          ctest_submit()
+
+      - name: Clang-tidy
+        if: runner.os == 'Linux'
+        shell: ctest -VV -S {0}
+        run: |
+          include($ENV{GITHUB_WORKSPACE}/.github/workflows/common_ctest.cmake)
+
+          set(CTEST_CONFIGURATION_TYPE Release)
+          set(CTEST_SOURCE_DIRECTORY $ENV{GITHUB_WORKSPACE})
+          set(CTEST_BINARY_DIRECTORY $ENV{GITHUB_WORKSPACE}/build/tidy)
+          set(CTEST_BUILD_NAME ${CMAKE_SYSTEM_NAME}.clang-tidy)
+
+          set(model Experimental)
+          if($ENV{GITHUB_EVENT_NAME} STREQUAL schedule)
+            set(model Nightly)
+          endif()
+
+          set(configure_opts
+            -DCMAKE_TOOLCHAIN_FILE=$ENV{GITHUB_WORKSPACE}/build/release/conan_build/generators/conan_toolchain.cmake
+            -DCMAKE_CXX_CLANG_TIDY=/usr/bin/clang-tidy
+            )
+
+          ctest_start(${model})
+          ctest_update()
+          ctest_configure(OPTIONS "${configure_opts}")
+          ctest_build()
+          ctest_submit()
+
+      - name: Coverage
+        if: github.event_name == 'schedule' && runner.os == 'Linux'
+        shell: ctest -VV -S {0}
+        run: |
+          include($ENV{GITHUB_WORKSPACE}/.github/workflows/common_ctest.cmake)
+
+          set(CTEST_CONFIGURATION_TYPE Debug)
+          set(CTEST_SOURCE_DIRECTORY $ENV{GITHUB_WORKSPACE})
+          set(CTEST_BINARY_DIRECTORY $ENV{GITHUB_WORKSPACE}/build/coverage)
+          set(CTEST_BUILD_NAME ${CMAKE_SYSTEM_NAME}.coverage)
+
+          find_program(CTEST_COVERAGE_COMMAND NAMES gcov)
+          set(configure_opts
+            -DCMAKE_TOOLCHAIN_FILE=$ENV{GITHUB_WORKSPACE}/build/debug/conan_build/generators/conan_toolchain.cmake
+            -DCMAKE_CXX_FLAGS_INIT=--coverage
+            )
+
+          ctest_start(Nightly)
+          ctest_update()
+          ctest_configure(OPTIONS "${configure_opts}")
+          ctest_build()
+          ctest_test()
+          ctest_coverage()
+          ctest_submit()
+
+      - name: ASan
+        if: github.event_name == 'schedule' && runner.os == 'Linux'
+        shell: ctest -VV -S {0}
+        run: |
+          include($ENV{GITHUB_WORKSPACE}/.github/workflows/common_ctest.cmake)
+
+          set(CTEST_CONFIGURATION_TYPE Debug)
+          set(CTEST_SOURCE_DIRECTORY $ENV{GITHUB_WORKSPACE})
+          set(CTEST_BINARY_DIRECTORY $ENV{GITHUB_WORKSPACE}/build/asan)
+          set(CTEST_BUILD_NAME ${CMAKE_SYSTEM_NAME}.asan)
+
+          set(CTEST_MEMORYCHECK_TYPE AddressSanitizer)
+
+          set(configure_opts
+            -DCMAKE_TOOLCHAIN_FILE=$ENV{GITHUB_WORKSPACE}/build/debug/conan_build/generators/conan_toolchain.cmake
+            -DCMAKE_CXX_FLAGS_INIT=-fsanitize=address
+            -DCMAKE_EXE_LINKER_FLAGS_INIT=-fsanitize=address
+            )
+
+          ctest_start(Nightly)
+          ctest_update()
+          ctest_configure(OPTIONS "${configure_opts}")
+          ctest_build()
+          ctest_memcheck()
+          ctest_submit()
