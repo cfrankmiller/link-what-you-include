@@ -334,3 +334,59 @@ TEST_CASE("scanner: scan collects headers included transitively from private hea
   CHECK(output->includes[1].path == b_hpp.path);
   CHECK(output->includes[2].path == c_hpp.path);
 }
+
+TEST_CASE("scanner: scan can distinguish private sources in the interface include directory", "[scanner]")
+{
+  auto fs = llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem>{
+    new llvm::vfs::InMemoryFileSystem};
+
+  // 3rdparty
+  Literal_file a_hpp{"/opt/a.hpp", ""};
+  Literal_file b_hpp{"/opt/b.hpp", ""};
+
+  // interface
+  Literal_file interface_hpp{"/src/interface.hpp", R"(
+    #include "a.hpp"
+    )"};
+
+  // private
+  Literal_file private_cpp{"/src/private.cpp", R"(
+    #include "interface.hpp"
+    #include "b.hpp"
+    )"};
+
+  add_file(*fs, a_hpp);
+  add_file(*fs, b_hpp);
+  add_file(*fs, interface_hpp);
+  add_file(*fs, private_cpp);
+
+  target_model::Target_data target_data;
+  target_data.interface_headers = {interface_hpp.path};
+  target_data.interface_include_directories = {"/src"};
+  target_data.sources = {private_cpp.path};
+
+  std::filesystem::path cwd{"/"};
+  scanner::Compile_command compile_commands{
+    cwd,
+    private_cpp.path,
+    std::vector<std::string>{"clang", "-I/src", "-I/opt", private_cpp.path}};
+
+  clang::tooling::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
+
+  auto result = scanner::scan_impl(fs, dep_cache, target_data, compile_commands);
+
+  REQUIRE(result.has_value() == true);
+  //dump(*result);
+
+  auto output = scanner::merge_includes({*result});
+  //dump(*output);
+  REQUIRE(output.has_value() == true);
+
+  REQUIRE(output.has_value() == true);
+  REQUIRE(output->interface_includes.size() == 1);
+  REQUIRE(output->includes.size() == 2);
+
+  CHECK(output->interface_includes[0].path == a_hpp.path);
+  CHECK(output->includes[0].path == a_hpp.path);
+  CHECK(output->includes[1].path == b_hpp.path);
+}
