@@ -10,7 +10,6 @@
 #include <target_model/target_model.hpp>
 #include <target_model/target_model_loader.hpp>
 
-#include <fmt/format.h>
 #include <simdjson.h>
 #include <tl/expected.hpp>
 
@@ -19,6 +18,7 @@
 #include <cassert>
 #include <cstddef>
 #include <filesystem>
+#include <format>
 #include <iterator>
 #include <memory>
 #include <string>
@@ -84,7 +84,7 @@ auto parse_target_object_(simdjson::ondemand::object& target_object)
     }
     else
     {
-      return tl::unexpected(fmt::format("Unknown target array name {}", key));
+      return tl::unexpected(std::format("Unknown target array name {}", key));
     }
   }
 
@@ -155,7 +155,7 @@ auto location_(const simdjson::ondemand::document& doc, const char* data, size_t
   const size_t line_number = 2UL + std::count(data, &*line_start, '\n');
   const size_t line_offset = location - &*line_start;
 
-  return fmt::format("line {}, column {}", line_number, line_offset);
+  return std::format("line {}, column {}", line_number, line_offset);
 }
 
 } // namespace
@@ -175,7 +175,7 @@ auto Target_model_loader_impl::load_json(const std::filesystem::path& path)
 {
   if (!file_loader_->load(path))
   {
-    return tl::unexpected(fmt::format("error: failed to load {}", path.string()));
+    return tl::unexpected(std::format("error: failed to load {}", path.string()));
   }
 
   simdjson::ondemand::document doc;
@@ -188,7 +188,7 @@ auto Target_model_loader_impl::load_json(const std::filesystem::path& path)
   if (!target_to_raw_data.has_value())
   {
     return tl::unexpected(
-      fmt::format("error parsing {}: {}: {}\n",
+      std::format("error parsing {}: {}: {}\n",
                   path.string(),
                   location_(doc, file_loader_->data(), file_loader_->size()),
                   target_to_raw_data.error()));

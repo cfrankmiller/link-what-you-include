@@ -4,14 +4,14 @@
 #include <lwyi/parse_arguments.hpp>
 #include <src/run_lwyi.hpp>
 
-#include <fmt/base.h>
 #include <tl/expected.hpp>
 
+#include <print>
 #include <string>
 
 auto print_error(std::string error) -> tl::expected<int, std::string>
 {
-  fmt::print("{}\n", error);
+  std::print("{}\n", error);
   return 1;
 }
 

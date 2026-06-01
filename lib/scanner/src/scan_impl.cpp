@@ -22,8 +22,6 @@
 #include <clang/Serialization/PCHContainerOperations.h>
 #include <clang/Tooling/DependencyScanning/DependencyScanningFilesystem.h>
 #include <clang/Tooling/Tooling.h>
-#include <fmt/base.h>
-#include <fmt/format.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
 #include <llvm/ADT/Twine.h>
@@ -37,9 +35,11 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <print>
 #include <string>
 #include <utility>
 #include <vector>
+#include <format>
 
 namespace clang::dependency_directives_scan
 {
@@ -56,7 +56,7 @@ auto log(TArgs&&... args)
   static constexpr bool enable_log = false;
   if constexpr (enable_log)
   {
-    fmt::print(std::forward<TArgs>(args)...);
+    std::print(std::forward<TArgs>(args)...);
   }
 }
 
@@ -338,7 +338,7 @@ auto scan_impl(const llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>& file_syste
 {
   if (file_system->setCurrentWorkingDirectory(compile_command.cwd.string()))
   {
-    return tl::unexpected(fmt::format("Cannot chdir into {}", compile_command.cwd.string()));
+    return tl::unexpected(std::format("Cannot chdir into {}", compile_command.cwd.string()));
   }
 
   Include_data include_data;
@@ -354,7 +354,7 @@ auto scan_impl(const llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>& file_syste
   if (!invocation.run())
   {
     return tl::unexpected(
-      fmt::format("Error while processing {}.\n", compile_command.source.string()));
+      std::format("Error while processing {}.\n", compile_command.source.string()));
   }
 
   return include_data;

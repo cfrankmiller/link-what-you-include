@@ -10,15 +10,15 @@
 #include <target_model/target_model.hpp>
 #include <target_model/target_model_loader.hpp>
 
-#include <fmt/base.h>
-#include <fmt/format.h>
 #include <tl/expected.hpp>
 
 #include <filesystem>
+#include <format>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <print>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -39,24 +39,24 @@ auto run_lwyi(const lwyi::Command_options& options) -> tl::expected<int, std::st
     if (!std::filesystem::is_directory(binary_dir))
     {
       return tl::unexpected(
-        fmt::format("error: {} is not a directory\n", binary_dir.string()));
+        std::format("error: {} is not a directory\n", binary_dir.string()));
     }
   }
 
   const auto info_file = binary_dir / "link_what_you_include_info.json";
   if (!std::filesystem::is_regular_file(info_file))
   {
-    return tl::unexpected(fmt::format("error: {} is not a file\n", info_file.string()));
+    return tl::unexpected(std::format("error: {} is not a file\n", info_file.string()));
   }
 
-  fmt::print("# Loading build system info from {}\n", info_file.string());
+  std::print("# Loading build system info from {}\n", info_file.string());
 
   auto loader = target_model::Target_model_loader::create();
   const auto load_result = loader->load_json(info_file);
   if (!load_result.has_value())
   {
     return tl::unexpected(
-      fmt::format("error: failed to load {}: {}\n", info_file.string(), load_result.error()));
+      std::format("error: failed to load {}: {}\n", info_file.string(), load_result.error()));
   }
   const auto target_model = loader->make_target_model();
 
@@ -74,7 +74,7 @@ auto run_lwyi(const lwyi::Command_options& options) -> tl::expected<int, std::st
 
   const auto num_threads = (0U < options.num_threads) ? options.num_threads
                                                       : std::thread::hardware_concurrency();
-  fmt::print("Scanning with {} threads\n", num_threads);
+  std::print("Scanning with {} threads\n", num_threads);
 
   bool success = true;
   if (selected_targets.empty())
@@ -82,7 +82,7 @@ auto run_lwyi(const lwyi::Command_options& options) -> tl::expected<int, std::st
     target_model.for_each_target(
       [&](const target_model::Target& target, const target_model::Target_data& target_data)
       {
-        fmt::print("# Checking that {} links what it includes\n", target.name);
+        std::print("# Checking that {} links what it includes\n", target.name);
         std::cout.flush();
 
         success &=
@@ -93,13 +93,13 @@ auto run_lwyi(const lwyi::Command_options& options) -> tl::expected<int, std::st
   {
     for (const auto& target : selected_targets)
     {
-      fmt::print("# Checking that {} links what it includes\n", target.name);
+      std::print("# Checking that {} links what it includes\n", target.name);
       std::cout.flush();
 
       auto otarget_data = target_model.get_target_data(target);
       if (!otarget_data.has_value())
       {
-        fmt::print("error: No target named {} found\n", target.name);
+        std::print("error: No target named {} found\n", target.name);
         success = false;
         break;
       }

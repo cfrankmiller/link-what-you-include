@@ -6,12 +6,12 @@
 #include <tidy/tidy.hpp>
 #include <util/arg_parser.hpp>
 
-#include <fmt/base.h>
 #include <tl/expected.hpp>
 
 #include <cassert>
 #include <cstddef>
 #include <filesystem>
+#include <print>
 #include <string_view>
 #include <vector>
 
@@ -50,7 +50,7 @@ auto tidy_tool(const target_model::Target_model& target_model,
 
   if (!result.has_value())
   {
-    fmt::print("{}\n{}\n", result.error(), usage_string);
+    std::print("{}\n{}\n", result.error(), usage_string);
     return 1;
   }
 
@@ -58,19 +58,19 @@ auto tidy_tool(const target_model::Target_model& target_model,
 
   if (options.help)
   {
-    fmt::print("{}\n", usage_string);
+    std::print("{}\n", usage_string);
     return 1;
   }
   if (options.config_filename.empty())
   {
-    fmt::print("A config file is required.\n{}\n", usage_string);
+    std::print("A config file is required.\n{}\n", usage_string);
     return 1;
   }
 
   auto config = tidy::load_config(options.config_filename);
   if (!config.has_value())
   {
-    fmt::print("Failed to load config file.\n{}\n", config.error());
+    std::print("Failed to load config file.\n{}\n", config.error());
     return 1;
   }
 
@@ -84,15 +84,15 @@ auto tidy_tool(const target_model::Target_model& target_model,
       {
         if (2 < targets.size())
         {
-          fmt::print(",");
+          std::print(",");
         }
-        fmt::print(" ");
+        std::print(" ");
       }
       if (i + 1 == targets.size() && 1 < targets.size())
       {
-        fmt::print("and ");
+        std::print("and ");
       }
-      fmt::print("{}", targets[i].name);
+      std::print("{}", targets[i].name);
     }
   };
 
@@ -103,31 +103,31 @@ auto tidy_tool(const target_model::Target_model& target_model,
     {
       case tidy::Dag_diagnostic_type::added_to_cluster:
       {
-        fmt::print("error: a known target cluster increased in size with the addition of ");
+        std::print("error: a known target cluster increased in size with the addition of ");
         print(diagnostic.targets);
-        fmt::print("\n\n");
+        std::print("\n\n");
         error = true;
       }
       break;
       case tidy::Dag_diagnostic_type::removed_from_cluster:
       {
-        fmt::print("Warning: a known target cluster decreased in size with the removal of ");
+        std::print("Warning: a known target cluster decreased in size with the removal of ");
         print(diagnostic.targets);
-        fmt::print("\n\n");
+        std::print("\n\n");
       }
       break;
       case tidy::Dag_diagnostic_type::new_cluster:
       {
-        fmt::print("Warning: a new target cluster was introduced with ");
+        std::print("Warning: a new target cluster was introduced with ");
         print(diagnostic.targets);
-        fmt::print("\n\n");
+        std::print("\n\n");
         error = true;
       }
       break;
       case tidy::Dag_diagnostic_type::forbidden_dependency:
       {
         assert(diagnostic.targets.size() == 2);
-        fmt::print("error: {} is forbidden to depend on {}\n",
+        std::print("error: {} is forbidden to depend on {}\n",
                    diagnostic.targets[0].name,
                    diagnostic.targets[1].name);
         error = true;

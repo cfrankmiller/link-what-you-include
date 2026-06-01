@@ -22,7 +22,6 @@ target_link_libraries(lib_tidy
     tl::expected
   PRIVATE
     lib_lwyi
-    fmt::fmt
     simdjson::simdjson
   )
 

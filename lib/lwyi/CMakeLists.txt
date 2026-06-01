@@ -22,7 +22,6 @@ target_link_libraries(lib_lwyi
     tl::expected
   PRIVATE
     lib_util
-    fmt::fmt
   )
 
 if(BUILD_TESTING)
@@ -39,7 +38,6 @@ if(BUILD_TESTING)
       lib_lwyi
       lib_scanner
       lib_target_model
-      fmt::fmt
       Catch2::Catch2WithMain
     )
   catch_discover_tests(lib_lwyi_test ADD_TAGS_AS_LABELS)

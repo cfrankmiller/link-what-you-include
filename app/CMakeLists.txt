@@ -25,7 +25,6 @@ target_link_libraries(
     lib_scanner
     lib_target_model
     lib_util
-    fmt::fmt
     simdjson::simdjson
     tl::expected
   )

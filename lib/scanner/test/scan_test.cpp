@@ -10,12 +10,12 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <clang/Tooling/DependencyScanning/DependencyScanningFilesystem.h>
-#include <fmt/base.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
 #include <llvm/ADT/Twine.h>
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/VirtualFileSystem.h>
 
+#include <print>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -27,46 +27,46 @@ void dump(const scanner::Include_set& include_set, std::string_view indent = "")
 {
   for (const auto& include : include_set)
   {
-    fmt::print("{}{}\n", indent, include.path.string());
+    std::print("{}{}\n", indent, include.path.string());
     for (const auto& source_line : include.include_chain)
     {
-      fmt::print("{}  {}:{}\n", indent, source_line.source.string(), source_line.line);
+      std::print("{}  {}:{}\n", indent, source_line.source.string(), source_line.line);
     }
   }
 }
 
 [[maybe_unused]] void dump(const scanner::Include_data& include_data)
 {
-  fmt::print("includes:\n");
+  std::print("includes:\n");
   dump(include_data.includes, "  ");
 
-  fmt::print("interface_header_includes:\n");
+  std::print("interface_header_includes:\n");
   for (const auto& [header, includes] : include_data.interface_header_includes)
   {
-    fmt::print("  {}:\n", header.string());
+    std::print("  {}:\n", header.string());
     dump(includes, std::string("  "));
   }
 }
 
 [[maybe_unused]] void dump(const scanner::Intransitive_includes& ii)
 {
-  fmt::print("interface includes:\n");
+  std::print("interface includes:\n");
   for (const auto& interface_include : ii.interface_includes)
   {
-    fmt::print("  {}\n", interface_include.path.string());
+    std::print("  {}\n", interface_include.path.string());
     for (const auto& source_line : interface_include.include_chain)
     {
-      fmt::print("    {}:{}\n", source_line.source.string(), source_line.line);
+      std::print("    {}:{}\n", source_line.source.string(), source_line.line);
     }
   }
 
-  fmt::print("includes:\n");
+  std::print("includes:\n");
   for (const auto& include : ii.includes)
   {
-    fmt::print("  {}\n", include.path.string());
+    std::print("  {}\n", include.path.string());
     for (const auto& source_line : include.include_chain)
     {
-      fmt::print("    {}:{}\n", source_line.source.string(), source_line.line);
+      std::print("    {}:{}\n", source_line.source.string(), source_line.line);
     }
   }
 }

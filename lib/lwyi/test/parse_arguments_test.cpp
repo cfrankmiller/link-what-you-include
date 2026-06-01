@@ -7,21 +7,21 @@
 
 #include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
-#include <fmt/format.h>
 
+#include <format>
 #include <numeric>
 #include <string_view>
 #include <vector>
 
 auto to_string(std::vector<const char*> args)
 {
-  return fmt::format("command line: {}\n",
+  return std::format("command line: {}\n",
                      std::accumulate(args.begin(),
                                      args.end(),
                                      std::string{},
                                      [](const auto& lhs, const auto& rhs)
                                      {
-                                       return fmt::format("{} {}", lhs, rhs);
+                                       return std::format("{} {}", lhs, rhs);
                                      }));
 }
 

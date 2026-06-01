@@ -14,8 +14,6 @@
 #include <clang/Tooling/CompilationDatabase.h>
 #include <clang/Tooling/DependencyScanning/DependencyScanningFilesystem.h>
 #include <clang/Tooling/JSONCompilationDatabase.h>
-#include <fmt/base.h>
-#include <fmt/format.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
 #include <llvm/Support/VirtualFileSystem.h>
 #include <tl/expected.hpp>
@@ -23,9 +21,11 @@
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
+#include <format>
 #include <functional>
 #include <map>
 #include <memory>
+#include <print>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -61,7 +61,7 @@ auto Scanner::scan(const std::filesystem::path& binary_dir,
     clang::tooling::JSONCommandLineSyntax::AutoDetect);
   if (!compilation_database)
   {
-    return tl::unexpected(fmt::format("Failed to load compilation database: {}\n",
+    return tl::unexpected(std::format("Failed to load compilation database: {}\n",
                                       compilation_database_error));
   }
 
@@ -81,7 +81,7 @@ auto Scanner::scan(const std::filesystem::path& binary_dir,
   const auto resource_dir = exe_path.parent_path() / relative_resource_dir();
 
   clang::tooling::CommandLineArguments arguments;
-  arguments.emplace_back(fmt::format("-resource-dir={}", resource_dir.string()));
+  arguments.emplace_back(std::format("-resource-dir={}", resource_dir.string()));
 #if _WIN32
   arguments.emplace_back("-Wno-error");
   arguments.emplace_back("-Wno-unused-command-line-argument");
@@ -106,7 +106,7 @@ auto Scanner::scan(const std::filesystem::path& binary_dir,
   {
     if (!source_path.is_absolute())
     {
-      return tl::unexpected(fmt::format("Unexpected relative path in target data: {}\n",
+      return tl::unexpected(std::format("Unexpected relative path in target data: {}\n",
                                         source_path.string()));
     }
 
@@ -144,11 +144,11 @@ auto Scanner::scan(const std::filesystem::path& binary_dir,
       return scan_impl(file_system, dep_cache, target_data, compile_command);
     });
 
-  fmt::print("Processed {} source files\n", processed_file_count);
+  std::print("Processed {} source files\n", processed_file_count);
   for (const auto& skipped_file_type : skipped_file_types)
   {
     auto msg = 1 == skipped_file_type.second ? "file" : "files";
-    fmt::print("Skipped {} *{} {}\n", skipped_file_type.second, skipped_file_type.first, msg);
+    std::print("Skipped {} *{} {}\n", skipped_file_type.second, skipped_file_type.first, msg);
   }
 
   return merge_includes(include_data_array);

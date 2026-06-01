@@ -22,7 +22,6 @@ target_link_libraries(lib_scanner
   PRIVATE
     lib_util
     lib_target_model
-    fmt::fmt
     clangDependencyScanning
     clangTooling
   )
@@ -82,7 +81,6 @@ if(BUILD_TESTING)
     PRIVATE
       lib_scanner
       lib_target_model
-      fmt::fmt
       Catch2::Catch2WithMain
       clangTooling
     )
