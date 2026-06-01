@@ -26,7 +26,6 @@ target_link_libraries(
     lib_target_model
     lib_util
     simdjson::simdjson
-    tl::expected
   )
 
 install(TARGETS lwyi)

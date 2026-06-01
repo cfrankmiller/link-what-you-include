@@ -65,7 +65,6 @@ else()
   target_compile_options(clangTooling INTERFACE -fno-rtti)
 endif()
 
-find_package(tl-expected REQUIRED)
 find_package(simdjson REQUIRED)
 
 if(BUILD_TESTING)
@@ -77,7 +76,6 @@ if(ENABLE_DOGFOODING)
   include(cmake/link_what_you_include.cmake)
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
   link_what_you_include(clangTooling clang)
-  link_what_you_include(tl::expected tl)
 endif()
 
 ################################################################################

@@ -9,8 +9,8 @@
 #include <target_model/target_model_loader.hpp>
 
 #include <simdjson.h>
-#include <tl/expected.hpp>
 
+#include <expected>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -28,7 +28,7 @@ public:
   explicit Target_model_loader_impl(std::unique_ptr<File_loader> file_loader);
 
   auto load_json(const std::filesystem::path& path)
-    -> tl::expected<void, std::string> override;
+    -> std::expected<void, std::string> override;
 
   auto make_target_model() -> Target_model override;
 

@@ -6,12 +6,12 @@
 #include <tidy/config.hpp>
 
 #include <simdjson.h>
-#include <tl/expected.hpp>
 
+#include <expected>
 #include <string>
 
 namespace tidy
 {
 auto load_config_impl(const simdjson::padded_string& raw_config)
-  -> tl::expected<Config, std::string>;
+  -> std::expected<Config, std::string>;
 }

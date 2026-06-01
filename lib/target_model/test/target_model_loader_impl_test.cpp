@@ -10,9 +10,9 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <simdjson.h>
-#include <tl/expected.hpp>
 
 #include <cstring>
+#include <expected>
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -36,7 +36,7 @@ public:
   }
 
   [[nodiscard]] auto load(const std::filesystem::path& path)
-    -> tl::expected<void, std::string> override
+    -> std::expected<void, std::string> override
   {
     static_cast<void>(path);
     return {};
