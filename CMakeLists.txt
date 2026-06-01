@@ -18,7 +18,7 @@ include(GNUInstallDirs)
 
 cmake_dependent_option(ENABLE_DOGFOODING "Enable support for running link-what-you-include on itself" ON BUILD_TESTING OFF)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
