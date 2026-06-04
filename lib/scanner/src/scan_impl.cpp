@@ -281,7 +281,7 @@ private:
       if (llvm::ErrorOr<clang::tooling::dependencies::EntryRef> entry =
             dep_fs->getOrCreateFileSystemEntry(file.getName()))
       {
-          return entry->getDirectiveTokens();
+        return entry->getDirectiveTokens();
       }
       return std::nullopt;
     };

@@ -51,4 +51,3 @@ auto executable_path() -> std::filesystem::path
 #endif
 }
 } // namespace scanner
-
