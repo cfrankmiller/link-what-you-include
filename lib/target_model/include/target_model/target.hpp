@@ -11,15 +11,7 @@ struct Target
 {
   std::string name;
 
-  friend auto operator==(const Target& lhs, const Target& rhs) -> bool
-  {
-    return lhs.name == rhs.name;
-  }
-
-  friend auto operator<(const Target& lhs, const Target& rhs) -> bool
-  {
-    return lhs.name < rhs.name;
-  }
+  auto operator<=>(const Target&) const = default;
 };
 } // namespace target_model
 
