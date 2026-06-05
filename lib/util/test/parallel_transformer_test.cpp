@@ -18,7 +18,7 @@ TEST_CASE("util: basic parallel_transformer test", "[util]")
 {
   constexpr size_t count = 100;
   std::vector<int> x(count);
-  std::iota(x.begin(), x.end(), 0);
+  std::ranges::iota(x, 0);
   std::vector<int> y(x.size(), 0);
 
   const size_t thread_count = 7;
@@ -33,13 +33,12 @@ TEST_CASE("util: basic parallel_transformer test", "[util]")
                         });
 
   std::vector<int> z(x.size(), 0);
-  std::transform(x.begin(),
-                 x.end(),
-                 z.begin(),
-                 [](int x)
-                 {
-                   return x / 2;
-                 });
+  std::ranges::transform(x,
+                         z.begin(),
+                         [](int x)
+                         {
+                           return x / 2;
+                         });
 
   bool ok = true;
   for (size_t i = 0; i < y.size(); ++i)
@@ -58,7 +57,7 @@ TEST_CASE("util: parallel_transformer uses threads", "[util]")
 {
   constexpr size_t count = 100;
   std::vector<int> v(count);
-  std::iota(v.begin(), v.end(), 0);
+  std::ranges::iota(v, 0);
 
   std::vector<std::thread::id> out(v.size(), std::thread::id{});
 
@@ -73,8 +72,8 @@ TEST_CASE("util: parallel_transformer uses threads", "[util]")
                           return std::this_thread::get_id();
                         });
 
-  std::sort(out.begin(), out.end());
-  out.erase(std::unique(out.begin(), out.end()), out.end());
+  std::ranges::sort(out);
+  out.erase(std::ranges::unique(out).begin(), out.end());
 
   std::ostringstream os;
   for (auto i : out)

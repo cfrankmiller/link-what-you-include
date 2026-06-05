@@ -44,6 +44,11 @@ struct Less
     return lhs.first < rhs;
   }
 
+  auto operator()(const Target& lhs, const Target& rhs) -> bool
+  {
+    return lhs < rhs;
+  }
+
   auto operator()(const std::pair<std::filesystem::path, const Element*>& lhs,
                   const std::pair<std::filesystem::path, const Element*>& rhs) -> bool
   {
@@ -76,7 +81,7 @@ struct Comp
 Target_model::Target_model(std::vector<std::pair<Target, Target_data>> target_to_target_data)
 : target_to_target_data_(std::move(target_to_target_data))
 {
-  std::sort(target_to_target_data_.begin(), target_to_target_data_.end(), Less{});
+  std::ranges::sort(target_to_target_data, Less{});
 
   for (const Element& element : target_to_target_data_)
   {
@@ -95,9 +100,7 @@ Target_model::Target_model(std::vector<std::pair<Target, Target_data>> target_to
 auto Target_model::validate() const -> std::string
 {
   // look for duplicate targets
-  if (auto it = std::adjacent_find(target_to_target_data_.begin(),
-                                   target_to_target_data_.end(),
-                                   Comp{});
+  if (auto it = std::ranges::adjacent_find(target_to_target_data_, Comp{});
       it != target_to_target_data_.end())
   {
     return std::format("Target {} is repeated.\n", it->first.name);
@@ -156,10 +159,7 @@ auto Target_model::validate() const -> std::string
 auto Target_model::get_target_data(const Target& target) const
   -> std::optional<std::reference_wrapper<const Target_data>>
 {
-  if (auto it = std::lower_bound(target_to_target_data_.begin(),
-                                 target_to_target_data_.end(),
-                                 target,
-                                 Less{});
+  if (auto it = std::ranges::lower_bound(target_to_target_data_, target, Less{});
       it != target_to_target_data_.end() && it->first == target)
   {
     return std::ref(it->second);
