@@ -14,6 +14,7 @@
 
 #include <filesystem>
 #include <print>
+#include <ranges>
 #include <string_view>
 #include <unordered_set>
 #include <utility>
@@ -49,9 +50,8 @@ void dump(const std::vector<lwyi::LWYI_error>& errors)
     for (const auto& include : error.sample_includes)
     {
       std::print("  {}\n", include.path.string());
-      for (auto it = include.include_chain.rbegin(); it != include.include_chain.rend(); ++it)
+      for (const auto& source_line : std::ranges::reverse_view(include.include_chain))
       {
-        const auto& source_line = *it;
         std::print("    included from {}:{}\n", source_line.source.string(), source_line.line);
       }
     }
