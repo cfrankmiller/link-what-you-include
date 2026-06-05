@@ -8,13 +8,13 @@
 
 #include <cassert>
 #include <cstdint>
+#include <expected>
 #include <format>
 #include <iterator>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
-#include <expected>
 
 namespace lwyi
 {
