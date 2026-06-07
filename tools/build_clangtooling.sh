@@ -29,6 +29,7 @@ mv "llvm-${version}.src" "$work_dir/src/llvm"
 cmake -G Ninja \
       -S "$work_dir/src/llvm" -B "$work_dir/build" \
       -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS=OFF \
       -DCMAKE_INSTALL_PREFIX="$install_dir" \
       -DLLVM_ENABLE_PROJECTS=clang \
       -DLLVM_INCLUDE_TESTS=OFF \
