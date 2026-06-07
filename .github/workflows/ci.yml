@@ -82,12 +82,27 @@ jobs:
             set(model Nightly)
           endif()
 
+          set(configure_opts
+            -DCMAKE_INSTALL_PREFIX=$ENV{GITHUB_WORKSPACE}/install
+            )
+
           ctest_start(${model})
           ctest_update()
           ctest_configure(OPTIONS "${configure_opts}")
           ctest_build()
           ctest_test()
           ctest_submit()
+
+      - name: Install
+        run: |
+          cmake --install ./build/release
+
+      - name: Upload Install
+        uses: actions/upload-artifact@v4
+        with:
+          name: lwyi_${{ runner.os }}
+          path: install
+          retention-days: 5
 
       - name: Clang-tidy
         if: runner.os == 'Linux'
