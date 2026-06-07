@@ -122,16 +122,16 @@ TEST_CASE("target_model: target_model_loader_impl can load a valid json file", "
   const auto& liba_info = data.value().get(); // NOLINT(bugprone-unchecked-optional-access)
   CHECK(liba_info.interface_include_directories.empty());
   CHECK(liba_info.interface_headers ==
-        std::unordered_set<std::filesystem::path, target_model::Path_hash>{
+        std::unordered_set<std::filesystem::path>{
           "/some/path/liba/one.h",
           "/some/path/liba/two.h"});
   CHECK(liba_info.interface_dependencies.empty());
   CHECK(liba_info.sources ==
-        std::unordered_set<std::filesystem::path, target_model::Path_hash>{
+        std::unordered_set<std::filesystem::path>{
           "/some/other/path/liba/one.cpp",
           "/some/other/path/liba/two.cpp"});
   CHECK(liba_info.verify_interface_header_sets_sources ==
-        std::unordered_set<std::filesystem::path, target_model::Path_hash>{
+        std::unordered_set<std::filesystem::path>{
           "/some/path/liba/one.h.cpp",
           "/some/path/liba/two.h.cpp"});
   CHECK(liba_info.dependencies.empty());
@@ -141,7 +141,7 @@ TEST_CASE("target_model: target_model_loader_impl can load a valid json file", "
   const auto& libb_info = data.value().get(); // NOLINT(bugprone-unchecked-optional-access)
   CHECK(libb_info.interface_include_directories.empty());
   CHECK(libb_info.interface_headers ==
-        std::unordered_set<std::filesystem::path, target_model::Path_hash>{
+        std::unordered_set<std::filesystem::path>{
           "/some/path/libb/one.h",
           "/some/path/libb/two.h"});
   CHECK(libb_info.interface_dependencies.empty());
@@ -153,8 +153,8 @@ TEST_CASE("target_model: target_model_loader_impl can load a valid json file", "
   const auto& libc_info = data.value().get(); // NOLINT(bugprone-unchecked-optional-access)
   CHECK(
     libc_info.interface_include_directories ==
-    std::unordered_set<std::filesystem::path, target_model::Path_hash>{"/some/path/libc/",
-                                                                       "/other/path/libc/"});
+    std::unordered_set<std::filesystem::path>{"/some/path/libc/",
+                                              "/other/path/libc/"});
   CHECK(libc_info.interface_headers.empty());
   CHECK(libc_info.interface_dependencies ==
         std::unordered_set<target_model::Target>{{"libb"}});
