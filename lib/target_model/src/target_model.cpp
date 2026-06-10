@@ -81,7 +81,7 @@ struct Comp
 Target_model::Target_model(std::vector<std::pair<Target, Target_data>> target_to_target_data)
 : target_to_target_data_(std::move(target_to_target_data))
 {
-  std::ranges::sort(target_to_target_data, Less{});
+  std::ranges::sort(target_to_target_data_, Less{});
 
   for (const Element& element : target_to_target_data_)
   {
