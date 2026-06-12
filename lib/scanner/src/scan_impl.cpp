@@ -20,7 +20,7 @@
 #include <clang/Lex/Preprocessor.h>
 #include <clang/Lex/PreprocessorOptions.h>
 #include <clang/Serialization/PCHContainerOperations.h>
-#include <clang/Tooling/DependencyScanning/DependencyScanningFilesystem.h>
+#include <clang/DependencyScanning/DependencyScanningFilesystem.h>
 #include <clang/Tooling/Tooling.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
@@ -194,7 +194,8 @@ public:
                           clang::OptionalFileEntryRef /*file*/,
                           clang::StringRef /*searchPath*/,
                           clang::StringRef /*relativePath*/,
-                          const clang::Module* /*imported*/,
+                          const clang::Module* /*suggestedModule*/,
+                          bool /*ModuleImported*/,
                           clang::SrcMgr::CharacteristicKind /*fileType*/) override
   {
     auto presumed_loc = preprocessor_.getSourceManager().getPresumedLoc(include_loc);
@@ -249,17 +250,44 @@ public:
   }
 };
 
+class ScanningDependencyDirectivesGetter : public clang::DependencyDirectivesGetter
+{
+  llvm::IntrusiveRefCntPtr<clang::dependencies::DependencyScanningWorkerFilesystem> dep_fs_;
+
+public:
+  explicit ScanningDependencyDirectivesGetter(
+    llvm::IntrusiveRefCntPtr<clang::dependencies::DependencyScanningWorkerFilesystem> dep_fs)
+  : dep_fs_(std::move(dep_fs))
+  {
+  }
+
+  std::unique_ptr<DependencyDirectivesGetter> cloneFor(clang::FileManager&) override
+  {
+    return std::make_unique<ScanningDependencyDirectivesGetter>(dep_fs_);
+  }
+
+  std::optional<llvm::ArrayRef<clang::dependency_directives_scan::Directive>> operator()(clang::FileEntryRef file) override
+  {
+    if (llvm::ErrorOr<clang::dependencies::EntryRef> entry =
+          dep_fs_->getOrCreateFileSystemEntry(file.getName()))
+    {
+      return entry->getDirectiveTokens();
+    }
+    return std::nullopt;
+  }
+};
+
 class Action : public clang::PreprocessOnlyAction
 {
   Include_data& include_data_;
   const target_model::Target_data& target_data_;
 
-  llvm::IntrusiveRefCntPtr<clang::tooling::dependencies::DependencyScanningWorkerFilesystem> dep_fs_;
+  llvm::IntrusiveRefCntPtr<clang::dependencies::DependencyScanningWorkerFilesystem> dep_fs_;
 
 public:
   Action(Include_data& include_data,
          const target_model::Target_data& target_data,
-         llvm::IntrusiveRefCntPtr<clang::tooling::dependencies::DependencyScanningWorkerFilesystem> dep_fs)
+         llvm::IntrusiveRefCntPtr<clang::dependencies::DependencyScanningWorkerFilesystem> dep_fs)
   : include_data_(include_data),
     target_data_(target_data),
     dep_fs_(std::move(dep_fs))
@@ -267,25 +295,19 @@ public:
   }
 
 private:
-  void ExecuteAction() override
+  bool PrepareToExecuteAction(clang::CompilerInstance& compiler_instance) override
   {
-    auto& compiler_instance = getCompilerInstance();
-
+    auto dependency_directives_getter = std::make_unique<ScanningDependencyDirectivesGetter>(dep_fs_);
+    compiler_instance.setDependencyDirectivesGetter(std::move(dependency_directives_getter));
     compiler_instance.getDiagnosticOpts().IgnoreWarnings = true;
     compiler_instance.getDiagnostics().setIgnoreAllWarnings(true);
 
-    compiler_instance.getPreprocessorOpts().DependencyDirectivesForFile =
-      [dep_fs = dep_fs_](clang::FileEntryRef file)
-      -> std::optional<llvm::ArrayRef<clang::dependency_directives_scan::Directive>>
-    {
-      if (llvm::ErrorOr<clang::tooling::dependencies::EntryRef> entry =
-            dep_fs->getOrCreateFileSystemEntry(file.getName()))
-      {
-        return entry->getDirectiveTokens();
-      }
-      return std::nullopt;
-    };
+    return clang::PreprocessOnlyAction::PrepareToExecuteAction(compiler_instance);
+  }
 
+  void ExecuteAction() override
+  {
+    auto& compiler_instance = getCompilerInstance();
     auto& preprocessor = compiler_instance.getPreprocessor();
     preprocessor.addPPCallbacks(
       std::make_unique<PPRecorder>(preprocessor, include_data_, target_data_));
@@ -300,7 +322,7 @@ public:
   Action_factory(Include_data& include_data,
                  const target_model::Target_data& target_data,
                  llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> file_system,
-                 clang::tooling::dependencies::DependencyScanningFilesystemSharedCache& dep_cache)
+                 clang::dependencies::DependencyScanningFilesystemSharedCache& dep_cache)
   : include_data_(include_data),
     target_data_(target_data),
     file_system_(std::move(file_system)),
@@ -317,9 +339,8 @@ public:
   auto create() -> std::unique_ptr<clang::FrontendAction> override
   {
     auto dep_fs =
-      llvm::IntrusiveRefCntPtr<clang::tooling::dependencies::DependencyScanningWorkerFilesystem>{
-        new clang::tooling::dependencies::DependencyScanningWorkerFilesystem(dep_cache_,
-                                                                             file_system_)};
+      llvm::IntrusiveRefCntPtr<clang::dependencies::DependencyScanningWorkerFilesystem>{
+        new clang::dependencies::DependencyScanningWorkerFilesystem(dep_cache_, file_system_)};
     return std::make_unique<Action>(include_data_, target_data_, std::move(dep_fs));
   }
 
@@ -327,11 +348,11 @@ private:
   Include_data& include_data_;
   const target_model::Target_data& target_data_;
   llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> file_system_;
-  clang::tooling::dependencies::DependencyScanningFilesystemSharedCache& dep_cache_;
+  clang::dependencies::DependencyScanningFilesystemSharedCache& dep_cache_;
 };
 
 auto scan_impl(const llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>& file_system,
-               clang::tooling::dependencies::DependencyScanningFilesystemSharedCache& dep_cache,
+               clang::dependencies::DependencyScanningFilesystemSharedCache& dep_cache,
                const target_model::Target_data& target_data,
                const Compile_command& compile_command)
   -> std::expected<Include_data, std::string>

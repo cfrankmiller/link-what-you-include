@@ -13,18 +13,13 @@ fi
 mkdir -p "$work_dir"
 
 cd "$work_dir"
-version="18.1.8"
-curl -LO "https://github.com/llvm/llvm-project/releases/download/llvmorg-${version}/clang-${version}.src.tar.xz"
-curl -LO "https://github.com/llvm/llvm-project/releases/download/llvmorg-${version}/cmake-${version}.src.tar.xz"
-curl -LO "https://github.com/llvm/llvm-project/releases/download/llvmorg-${version}/llvm-${version}.src.tar.xz"
+
+version="22.1.7"
+curl -LO "https://github.com/llvm/llvm-project/releases/download/llvmorg-${version}/llvm-project-${version}.src.tar.xz"
+
 export MSYS=winsymlinks:nativestrict # needed for windows
-tar -xf "clang-${version}.src.tar.xz"
-tar -xf "cmake-${version}.src.tar.xz"
-tar -xf "llvm-${version}.src.tar.xz"
-mkdir src
-mv "clang-${version}.src" "$work_dir/src/clang"
-mv "cmake-${version}.src" "$work_dir/src/cmake"
-mv "llvm-${version}.src" "$work_dir/src/llvm"
+tar -xf "llvm-project-${version}.src.tar.xz"
+mv "llvm-project-${version}.src" "$work_dir/src"
 
 cmake -G Ninja \
       -S "$work_dir/src/llvm" -B "$work_dir/build" \
@@ -37,8 +32,8 @@ cmake -G Ninja \
 cmake --build "$work_dir/build"
 cmake --install "$work_dir/build"
 
-# TODO: figure out how to only build and install the libraries
-#cmake --build "$work_dir/build" -t \
-#  install-clang-headers \
-#  install-clang-libraries \
-#  install-clang-cmake-exports
+## TODO: figure out how to only build and install the libraries
+##cmake --build "$work_dir/build" -t \
+##  install-clang-headers \
+##  install-clang-libraries \
+##  install-clang-cmake-exports

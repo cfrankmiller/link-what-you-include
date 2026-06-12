@@ -24,7 +24,7 @@ namespace llvm::vfs
 class FileSystem;
 }
 
-namespace clang::tooling::dependencies
+namespace clang::dependencies
 {
 class DependencyScanningFilesystemSharedCache;
 }
@@ -62,7 +62,7 @@ struct Include_data
 };
 
 auto scan_impl(const llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>& file_system,
-               clang::tooling::dependencies::DependencyScanningFilesystemSharedCache& dep_cache,
+               clang::dependencies::DependencyScanningFilesystemSharedCache& dep_cache,
                const target_model::Target_data& target_data,
                const Compile_command& compile_command)
   -> std::expected<Include_data, std::string>;

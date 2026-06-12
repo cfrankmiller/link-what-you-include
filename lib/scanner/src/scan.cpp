@@ -12,7 +12,7 @@
 
 #include <clang/Tooling/ArgumentsAdjusters.h>
 #include <clang/Tooling/CompilationDatabase.h>
-#include <clang/Tooling/DependencyScanning/DependencyScanningFilesystem.h>
+#include <clang/DependencyScanning/DependencyScanningFilesystem.h>
 #include <clang/Tooling/JSONCompilationDatabase.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
 #include <llvm/Support/VirtualFileSystem.h>
@@ -82,8 +82,8 @@ auto Scanner::scan(const std::filesystem::path& binary_dir,
 
   clang::tooling::CommandLineArguments arguments;
   arguments.emplace_back(std::format("-resource-dir={}", resource_dir.string()));
-#if _WIN32
   arguments.emplace_back("-Wno-error");
+#if _WIN32
   arguments.emplace_back("-Wno-unused-command-line-argument");
 #endif
   auto args_adjuster =
@@ -128,7 +128,7 @@ auto Scanner::scan(const std::filesystem::path& binary_dir,
     ++processed_file_count;
   }
 
-  clang::tooling::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
+  clang::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
 
   std::vector<std::expected<Include_data, std::string>> include_data_array(
     compile_commands.size());

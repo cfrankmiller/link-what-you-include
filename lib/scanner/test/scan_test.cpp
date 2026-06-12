@@ -9,7 +9,7 @@
 #include <target_model/target_data.hpp>
 
 #include <catch2/catch_test_macros.hpp>
-#include <clang/Tooling/DependencyScanning/DependencyScanningFilesystem.h>
+#include <clang/DependencyScanning/DependencyScanningFilesystem.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
 #include <llvm/ADT/Twine.h>
 #include <llvm/Support/MemoryBuffer.h>
@@ -118,7 +118,7 @@ TEST_CASE("scanner: basic scan test", "[scanner]")
                                             std::vector<std::string>{"clang",
                                                                      private_cpp.path}};
 
-  clang::tooling::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
+  clang::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
 
   auto result = scanner::scan_impl(fs, dep_cache, target_data, compile_commands);
 
@@ -184,7 +184,7 @@ TEST_CASE("scanner: scan does not collect headers included transitively from non
                                             std::vector<std::string>{"clang",
                                                                      private_cpp.path}};
 
-  clang::tooling::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
+  clang::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
 
   auto result = scanner::scan_impl(fs, dep_cache, target_data, compile_commands);
   REQUIRE(result.has_value() == true);
@@ -248,7 +248,7 @@ TEST_CASE("scanner: scan collects headers included transitively from interface h
                                             std::vector<std::string>{"clang",
                                                                      private_cpp.path}};
 
-  clang::tooling::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
+  clang::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
 
   auto result = scanner::scan_impl(fs, dep_cache, target_data, compile_commands);
   REQUIRE(result.has_value() == true);
@@ -319,7 +319,7 @@ TEST_CASE("scanner: scan collects headers included transitively from private hea
                                             std::vector<std::string>{"clang",
                                                                      private_cpp.path}};
 
-  clang::tooling::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
+  clang::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
 
   auto result = scanner::scan_impl(fs, dep_cache, target_data, compile_commands);
   REQUIRE(result.has_value() == true);
