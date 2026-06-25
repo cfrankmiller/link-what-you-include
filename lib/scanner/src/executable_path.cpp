@@ -6,6 +6,7 @@
 #include <array>
 #include <cstddef>
 #include <filesystem>
+#include <utility>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -43,7 +44,7 @@ auto executable_path() -> std::filesystem::path
   constexpr size_t max_path_length = 4096;
   std::array<char, max_path_length> exe_path{};
   const ssize_t bytes = readlink("/proc/self/exe", exe_path.data(), max_path_length);
-  if (bytes < 0 || bytes == max_path_length)
+  if (bytes < 0 || std::cmp_equal(bytes, max_path_length))
   {
     return {};
   }
