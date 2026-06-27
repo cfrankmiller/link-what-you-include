@@ -49,35 +49,58 @@ Esri.
 
 ### How to build
 
-The following dependencies must be found by cmake
+A compiler with support for the C++23 standard is required. The following are known to work:
+- clang 21.1.8
+- gcc 14.2.0
+- msvc 19.51.36247.0
+
+The following dependencies must be available:
 
 - [catch2](https://github.com/catchorg/Catch2). Only needed if BUILD_TESTING is
-  enabled.
-- [fmt](https://github.com/fmtlib/fmt). To be removed by a future update to
-  C++23.
-- [libclang](https://github.com/llvm/llvm-project/releases/tag/llvmorg-18.1.8).
-  Must be version 18.
-- [simdjson](https://github.com/simdjson/simdjson).
-- [tl-expected](https://github.com/TartanLlama/expected). To be removed by a future update to C++23.
+  enabled. Version 3.15.1 is known to work.
+- [clang](https://github.com/llvm/llvm-project/releases/tag/llvmorg-18.1.8).
+  Only the tooling libraries are needed. Must be version 18. Version 18.1.8 is known to work.
+- [simdjson](https://github.com/simdjson/simdjson). Version 4.6.4 is known to work.
 
-[Conan](https://conan.io/) can be used to get all the dependencies except for
-`libclang`. It should be possible to manually install the dependencies or use
-system packages and have cmake find them in the usual way but this workflow is
-not tested. For Ubuntu, `libclang` can be installed with
+<details>
+<summary>Provision dependencies on Ubuntu 26.04</summary>
 
 ```
-$ sudo apt install libclang-18-dev
+$ sudo apt install clang-18 libclang-18-dev libsimdjson-dev catch2
 $ export Clang_ROOT=/usr/lib/llvm-18
 ```
+</details>
 
-Then run conan to install the rest of the dependencies and build as usual.
+<details>
+<summary>Provision dependencies on macOS 26</summary>
 
 ```
-$ conan install . -s build_type=Debug --build=missing -of build
-$ cmake -GNinja -S. -Bbuild \
-    -DCMAKE_TOOLCHAIN_FILE=./build/conan_build/generators/conan_toolchain.cmake \
-    -DCMAKE_BUILD_TYPE=Debug
+$ brew install llvm@21 llvm@18 catch2 simdjson
+$ export CXX=$(brew --prefix llvm@21)/bin/clang++
+$ export Clang_ROOT=/opt/homebrew/opt/llvm@18
+$ export Catch2_ROOT=/opt/homebrew/Cellar/catch2/3.15.1
+$ export simdjson_ROOT=/opt/homebrew/Cellar/simdjson/4.6.4
+```
+</details>
+
+<details>
+<summary>Provision dependencies from source</summary>
+
+This is relativly straight forward. Consider using the following scripts as a
+guide.
+
+- [catch2](tools/build_catch2.sh)
+- [clangtooling](tools/build_clangtooling.sh)
+- [simdjson](tools/build_simdjson.sh)
+
+</details>
+
+Build using CMake as usual.
+
+```
+$ cmake -GNinja -S. -Bbuild -DCMAKE_BUILD_TYPE=Debug
 $ cmake --build build
+$ ctest --test-dir build
 ```
 
 ### How to use with a cmake based build system
