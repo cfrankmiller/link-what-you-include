@@ -23,7 +23,6 @@ target_link_libraries(lib_target_model
     tl::expected
   PRIVATE
     lib_util
-    fmt::fmt
     simdjson::simdjson
   )
 

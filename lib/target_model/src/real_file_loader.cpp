@@ -3,12 +3,12 @@
 
 #include <src/real_file_loader.hpp>
 
-#include <fmt/format.h>
 #include <simdjson.h>
 #include <tl/expected.hpp>
 
 #include <cstddef>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <ios>
 #include <string>
@@ -21,7 +21,7 @@ auto Real_file_loader::load(const std::filesystem::path& path)
   std::ifstream ifs(path.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
   if (ifs.fail())
   {
-    return tl::unexpected(fmt::format("Failed to open {}", path.string()));
+    return tl::unexpected(std::format("Failed to open {}", path.string()));
   }
 
   size_ = ifs.tellg();
@@ -31,7 +31,7 @@ auto Real_file_loader::load(const std::filesystem::path& path)
   ifs.read(bytes_.data(), static_cast<std::streamsize>(size_));
   if (ifs.fail())
   {
-    return tl::unexpected(fmt::format("Failed to read {}", path.string()));
+    return tl::unexpected(std::format("Failed to read {}", path.string()));
   }
 
   return {};

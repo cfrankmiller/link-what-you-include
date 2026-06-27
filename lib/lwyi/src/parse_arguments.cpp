@@ -6,11 +6,11 @@
 #include <lwyi/command_options.hpp>
 #include <util/arg_parser.hpp>
 
-#include <fmt/format.h>
 #include <tl/expected.hpp>
 
 #include <cassert>
 #include <cstdint>
+#include <format>
 #include <iterator>
 #include <string>
 #include <string_view>
@@ -56,7 +56,7 @@ constexpr auto parser = util::arg_parser<Options>()
 
 auto usage(std::string_view name) -> std::string
 {
-  return fmt::format(usage_string, name);
+  return std::format(usage_string, name);
 }
 } // namespace
 
@@ -72,7 +72,7 @@ auto parse_arguments(int argc, const char* const* argv)
 
   if (!result.has_value())
   {
-    return tl::unexpected(fmt::format("{}\n{}\n", result.error(), usage(name)));
+    return tl::unexpected(std::format("{}\n{}\n", result.error(), usage(name)));
   }
   if (result.value().help)
   {

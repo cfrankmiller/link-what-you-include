@@ -6,9 +6,8 @@
 #include <src/graph_tool.hpp>
 #include <src/tidy_tool.hpp>
 
-#include <fmt/base.h>
-
 #include <cassert>
+#include <print>
 #include <string_view>
 #include <vector>
 
@@ -28,7 +27,7 @@ auto run_tool(const target_model::Target_model& target_model,
 
   if (args[0] == "list")
   {
-    fmt::print("{}\n", usage_string);
+    std::print("{}\n", usage_string);
     return 0;
   }
 
@@ -42,6 +41,6 @@ auto run_tool(const target_model::Target_model& target_model,
     return tidy_tool(target_model, selected_targets, args);
   }
 
-  fmt::print("Unknown tool {}\n", args[0]);
+  std::print("Unknown tool {}\n", args[0]);
   return 1;
 }

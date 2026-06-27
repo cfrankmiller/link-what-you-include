@@ -13,7 +13,6 @@ target_sources(lib_util
   )
 target_link_libraries(lib_util
   INTERFACE
-    fmt::fmt
     tl::expected
   )
 
@@ -29,7 +28,6 @@ if(BUILD_TESTING)
     PRIVATE
       lib_util
       Catch2::Catch2WithMain
-      fmt::fmt
     )
   catch_discover_tests(lib_util_test ADD_TAGS_AS_LABELS)
 endif()

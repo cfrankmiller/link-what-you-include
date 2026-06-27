@@ -3,11 +3,11 @@
 #include <src/load_config_impl.hpp>
 #include <tidy/config.hpp>
 
-#include <fmt/format.h>
 #include <simdjson.h>
 #include <tl/expected.hpp>
 
 #include <filesystem>
+#include <format>
 #include <string>
 
 namespace tidy
@@ -17,7 +17,7 @@ auto load_config(std::filesystem::path config_path) -> tl::expected<Config, std:
   simdjson::padded_string raw_config;
   if (auto error = simdjson::padded_string::load(config_path.string()).get(raw_config))
   {
-    return tl::unexpected(fmt::format("Failed to load config file {}: {}\n",
+    return tl::unexpected(std::format("Failed to load config file {}: {}\n",
                                       config_path.string(),
                                       simdjson::error_message(error)));
   }
@@ -26,7 +26,7 @@ auto load_config(std::filesystem::path config_path) -> tl::expected<Config, std:
     .map_error(
       [&](const std::string& err)
       {
-        return fmt::format("Failed to load config file {}: {}\n", config_path.string(), err);
+        return std::format("Failed to load config file {}: {}\n", config_path.string(), err);
       });
 }
 } // namespace tidy

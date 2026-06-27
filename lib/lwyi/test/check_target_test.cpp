@@ -11,9 +11,9 @@
 #include <target_model/target_model.hpp>
 
 #include <catch2/catch_test_macros.hpp>
-#include <fmt/base.h>
 
 #include <filesystem>
+#include <print>
 #include <string_view>
 #include <unordered_set>
 #include <utility>
@@ -42,17 +42,17 @@ void dump(const std::vector<lwyi::LWYI_error>& errors)
 
   for (const auto& error : errors)
   {
-    fmt::print("target:             {}\n", error.target.name);
-    fmt::print("linked_visiblity:   {}\n", to_string(error.linked_visibility));
-    fmt::print("included_visiblity: {}\n", to_string(error.included_visibility));
+    std::print("target:             {}\n", error.target.name);
+    std::print("linked_visiblity:   {}\n", to_string(error.linked_visibility));
+    std::print("included_visiblity: {}\n", to_string(error.included_visibility));
 
     for (const auto& include : error.sample_includes)
     {
-      fmt::print("  {}\n", include.path.string());
+      std::print("  {}\n", include.path.string());
       for (auto it = include.include_chain.rbegin(); it != include.include_chain.rend(); ++it)
       {
         const auto& source_line = *it;
-        fmt::print("    included from {}:{}\n", source_line.source.string(), source_line.line);
+        std::print("    included from {}:{}\n", source_line.source.string(), source_line.line);
       }
     }
   }

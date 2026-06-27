@@ -5,11 +5,11 @@
 
 #include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
-#include <fmt/base.h>
-#include <fmt/format.h>
 
 #include <cstdint>
+#include <format>
 #include <numeric>
+#include <print>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -20,13 +20,13 @@ using namespace std::string_view_literals;
 
 auto to_string(std::vector<const char*> args)
 {
-  return fmt::format("command line: {}\n",
+  return std::format("command line: {}\n",
                      std::accumulate(args.begin(),
                                      args.end(),
                                      std::string{},
                                      [](const auto& lhs, const auto& rhs)
                                      {
-                                       return fmt::format("{} {}", lhs, rhs);
+                                       return std::format("{} {}", lhs, rhs);
                                      }));
 }
 } // namespace
@@ -248,7 +248,7 @@ TEST_CASE("util: arg_parser given an int", "[util]")
 
     if (!result.has_value())
     {
-      fmt::print("!!! {}\n", result.error());
+      std::print("!!! {}\n", result.error());
     }
 
     REQUIRE(result.has_value());

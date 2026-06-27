@@ -7,11 +7,10 @@
 #include <target_model/target_data.hpp>
 #include <util/utils.hpp>
 
-#include <fmt/format.h>
-
 #include <algorithm>
 #include <cassert>
 #include <filesystem>
+#include <format>
 #include <functional>
 #include <iterator>
 #include <map>
@@ -101,7 +100,7 @@ auto Target_model::validate() const -> std::string
                                    Comp{});
       it != target_to_target_data_.end())
   {
-    return fmt::format("Target {} is repeated.\n", it->first.name);
+    return std::format("Target {} is repeated.\n", it->first.name);
   }
 
   // check directory_to_target
@@ -127,7 +126,7 @@ auto Target_model::validate() const -> std::string
 
         if (target_data.interface_include_prefixes.empty())
         {
-          return fmt::format(
+          return std::format(
             "{} and {} have a conflicting include directory ({}) and {} does not have an include prefix to disambiguate.\n",
             target.name,
             other_target.name,
@@ -140,7 +139,7 @@ auto Target_model::validate() const -> std::string
           if (auto it = other_target_data.interface_include_prefixes.find(prefix);
               it != other_target_data.interface_include_prefixes.end())
           {
-            return fmt::format(
+            return std::format(
               "{} and {} have conflicting include directories and share {} as an include prefix.\n",
               target.name,
               other_target.name,
