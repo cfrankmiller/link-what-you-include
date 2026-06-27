@@ -27,10 +27,10 @@
 #include <llvm/ADT/Twine.h>
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/VirtualFileSystem.h>
-#include <tl/expected.hpp>
 
 #include <cassert>
 #include <cstdint>
+#include <expected>
 #include <filesystem>
 #include <format>
 #include <functional>
@@ -334,11 +334,11 @@ auto scan_impl(const llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>& file_syste
                clang::tooling::dependencies::DependencyScanningFilesystemSharedCache& dep_cache,
                const target_model::Target_data& target_data,
                const Compile_command& compile_command)
-  -> tl::expected<Include_data, std::string>
+  -> std::expected<Include_data, std::string>
 {
   if (file_system->setCurrentWorkingDirectory(compile_command.cwd.string()))
   {
-    return tl::unexpected(std::format("Cannot chdir into {}", compile_command.cwd.string()));
+    return std::unexpected(std::format("Cannot chdir into {}", compile_command.cwd.string()));
   }
 
   Include_data include_data;
@@ -353,7 +353,7 @@ auto scan_impl(const llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>& file_syste
                                             pch_container_ops);
   if (!invocation.run())
   {
-    return tl::unexpected(
+    return std::unexpected(
       std::format("Error while processing {}.\n", compile_command.source.string()));
   }
 

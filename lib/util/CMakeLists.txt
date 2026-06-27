@@ -11,10 +11,6 @@ target_sources(lib_util
     src/parallel_transformer.cpp
     src/utils.cpp
   )
-target_link_libraries(lib_util
-  INTERFACE
-    tl::expected
-  )
 
 if(BUILD_TESTING)
   add_executable(lib_util_test)

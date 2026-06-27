@@ -19,7 +19,6 @@ target_sources(lib_tidy
 target_link_libraries(lib_tidy
   PUBLIC
     lib_target_model
-    tl::expected
   PRIVATE
     lib_lwyi
     simdjson::simdjson

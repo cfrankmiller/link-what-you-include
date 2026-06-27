@@ -4,9 +4,9 @@
 #include <src/real_file_loader.hpp>
 
 #include <simdjson.h>
-#include <tl/expected.hpp>
 
 #include <cstddef>
+#include <expected>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -16,12 +16,12 @@
 namespace target_model
 {
 auto Real_file_loader::load(const std::filesystem::path& path)
-  -> tl::expected<void, std::string>
+  -> std::expected<void, std::string>
 {
   std::ifstream ifs(path.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
   if (ifs.fail())
   {
-    return tl::unexpected(std::format("Failed to open {}", path.string()));
+    return std::unexpected(std::format("Failed to open {}", path.string()));
   }
 
   size_ = ifs.tellg();
@@ -31,7 +31,7 @@ auto Real_file_loader::load(const std::filesystem::path& path)
   ifs.read(bytes_.data(), static_cast<std::streamsize>(size_));
   if (ifs.fail())
   {
-    return tl::unexpected(std::format("Failed to read {}", path.string()));
+    return std::unexpected(std::format("Failed to read {}", path.string()));
   }
 
   return {};

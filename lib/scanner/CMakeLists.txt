@@ -17,8 +17,6 @@ target_sources(lib_scanner
     src/scan_impl.cpp
   )
 target_link_libraries(lib_scanner
-  PUBLIC
-    tl::expected
   PRIVATE
     lib_util
     lib_target_model

@@ -16,10 +16,10 @@
 #include <clang/Tooling/JSONCompilationDatabase.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
 #include <llvm/Support/VirtualFileSystem.h>
-#include <tl/expected.hpp>
 
 #include <cassert>
 #include <cstdlib>
+#include <expected>
 #include <filesystem>
 #include <format>
 #include <functional>
@@ -52,7 +52,7 @@ Scanner::~Scanner() = default;
 
 auto Scanner::scan(const std::filesystem::path& binary_dir,
                    const target_model::Target_data& target_data)
-  -> tl::expected<Intransitive_includes, std::string>
+  -> std::expected<Intransitive_includes, std::string>
 {
   std::string compilation_database_error;
   auto compilation_database = clang::tooling::JSONCompilationDatabase::loadFromFile(
@@ -61,8 +61,8 @@ auto Scanner::scan(const std::filesystem::path& binary_dir,
     clang::tooling::JSONCommandLineSyntax::AutoDetect);
   if (!compilation_database)
   {
-    return tl::unexpected(std::format("Failed to load compilation database: {}\n",
-                                      compilation_database_error));
+    return std::unexpected(std::format("Failed to load compilation database: {}\n",
+                                       compilation_database_error));
   }
 
   std::vector<std::filesystem::path> source_paths;
@@ -106,8 +106,8 @@ auto Scanner::scan(const std::filesystem::path& binary_dir,
   {
     if (!source_path.is_absolute())
     {
-      return tl::unexpected(std::format("Unexpected relative path in target data: {}\n",
-                                        source_path.string()));
+      return std::unexpected(std::format("Unexpected relative path in target data: {}\n",
+                                         source_path.string()));
     }
 
     std::vector<clang::tooling::CompileCommand> compile_commands_for_file =
@@ -130,14 +130,14 @@ auto Scanner::scan(const std::filesystem::path& binary_dir,
 
   clang::tooling::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
 
-  std::vector<tl::expected<Include_data, std::string>> include_data_array(
+  std::vector<std::expected<Include_data, std::string>> include_data_array(
     compile_commands.size());
 
   impl_->transformer.transform(
     compile_commands.begin(),
     compile_commands.end(),
     include_data_array.begin(),
-    [&](const Compile_command& compile_command) -> tl::expected<Include_data, std::string>
+    [&](const Compile_command& compile_command) -> std::expected<Include_data, std::string>
     {
       auto file_system = llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>{
         llvm::vfs::createPhysicalFileSystem()};

@@ -19,8 +19,6 @@ target_sources(lib_target_model
     src/target_model_loader_impl.cpp
   )
 target_link_libraries(lib_target_model
-  PUBLIC
-    tl::expected
   PRIVATE
     lib_util
     simdjson::simdjson
@@ -42,7 +40,6 @@ if(BUILD_TESTING)
       lib_target_model
       Catch2::Catch2WithMain
       simdjson::simdjson
-      tl::expected
     )
   catch_discover_tests(lib_target_model_test ADD_TAGS_AS_LABELS)
 endif()

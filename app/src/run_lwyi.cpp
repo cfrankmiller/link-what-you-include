@@ -10,8 +10,7 @@
 #include <target_model/target_model.hpp>
 #include <target_model/target_model_loader.hpp>
 
-#include <tl/expected.hpp>
-
+#include <expected>
 #include <filesystem>
 #include <format>
 #include <functional>
@@ -29,7 +28,7 @@ namespace target_model
 struct Target_data;
 } // namespace target_model
 
-auto run_lwyi(const lwyi::Command_options& options) -> tl::expected<int, std::string>
+auto run_lwyi(const lwyi::Command_options& options) -> std::expected<int, std::string>
 {
   auto working_dir = std::filesystem::current_path();
   auto binary_dir = working_dir;
@@ -38,7 +37,7 @@ auto run_lwyi(const lwyi::Command_options& options) -> tl::expected<int, std::st
     binary_dir = options.binary_dir;
     if (!std::filesystem::is_directory(binary_dir))
     {
-      return tl::unexpected(
+      return std::unexpected(
         std::format("error: {} is not a directory\n", binary_dir.string()));
     }
   }
@@ -46,7 +45,7 @@ auto run_lwyi(const lwyi::Command_options& options) -> tl::expected<int, std::st
   const auto info_file = binary_dir / "link_what_you_include_info.json";
   if (!std::filesystem::is_regular_file(info_file))
   {
-    return tl::unexpected(std::format("error: {} is not a file\n", info_file.string()));
+    return std::unexpected(std::format("error: {} is not a file\n", info_file.string()));
   }
 
   std::print("# Loading build system info from {}\n", info_file.string());
@@ -55,7 +54,7 @@ auto run_lwyi(const lwyi::Command_options& options) -> tl::expected<int, std::st
   const auto load_result = loader->load_json(info_file);
   if (!load_result.has_value())
   {
-    return tl::unexpected(
+    return std::unexpected(
       std::format("error: failed to load {}: {}\n", info_file.string(), load_result.error()));
   }
   const auto target_model = loader->make_target_model();

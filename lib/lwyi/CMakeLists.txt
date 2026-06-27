@@ -19,7 +19,6 @@ target_link_libraries(lib_lwyi
   PUBLIC
     lib_scanner
     lib_target_model
-    tl::expected
   PRIVATE
     lib_util
   )

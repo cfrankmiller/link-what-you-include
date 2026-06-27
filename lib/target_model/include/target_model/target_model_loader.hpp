@@ -3,8 +3,7 @@
 
 #pragma once
 
-#include <tl/expected.hpp>
-
+#include <expected>
 #include <filesystem>
 #include <string>
 
@@ -20,7 +19,7 @@ public:
   virtual ~Target_model_loader() = default;
 
   virtual auto load_json(const std::filesystem::path& path)
-    -> tl::expected<void, std::string> = 0;
+    -> std::expected<void, std::string> = 0;
 
   virtual auto make_target_model() -> Target_model = 0;
 };

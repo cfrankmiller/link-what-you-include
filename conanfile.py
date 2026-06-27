@@ -15,7 +15,6 @@ class lwyiRecipe(ConanFile):
 
     def requirements(self):
         self.requires("catch2/3.15.1")
-        self.requires("tl-expected/20190710")
         self.requires("simdjson/3.12.3")
 
     def layout(self):

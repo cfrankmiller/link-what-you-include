@@ -5,9 +5,8 @@
 
 #include <scanner/include.hpp>
 
-#include <tl/expected.hpp>
-
 #include <cstddef>
+#include <expected>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -38,7 +37,7 @@ public:
 
   auto scan(const std::filesystem::path& binary_dir,
             const target_model::Target_data& target_data)
-    -> tl::expected<Intransitive_includes, std::string>;
+    -> std::expected<Intransitive_includes, std::string>;
 
 private:
   struct Impl;

@@ -3,12 +3,11 @@
 
 #pragma once
 
-#include <tl/expected.hpp>
-
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <expected>
 #include <format>
 #include <iterator>
 #include <sstream>
@@ -66,14 +65,14 @@ public:
   }
 
   template <typename Tit>
-  [[nodiscard]] auto parse(Tit begin, Tit end) const -> tl::expected<Toptions, std::string>
+  [[nodiscard]] auto parse(Tit begin, Tit end) const -> std::expected<Toptions, std::string>
   {
     Toptions options;
     auto error_string =
       parse_impl_(options, begin, end, std::make_index_sequence<sizeof...(T)>{});
     if (!error_string.empty())
     {
-      return tl::unexpected(std::move(error_string));
+      return std::unexpected(std::move(error_string));
     }
 
     return options;
