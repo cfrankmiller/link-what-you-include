@@ -4,6 +4,7 @@
 #pragma once
 
 #include <lwyi/dependency_visibility.hpp>
+#include <lwyi/mode.hpp>
 #include <scanner/include.hpp>
 #include <target_model/target.hpp>
 
@@ -33,5 +34,6 @@ struct LWYI_error
 std::vector<LWYI_error> check_target(const target_model::Target_model& target_model,
                                      const target_model::Target& target,
                                      const target_model::Target_data& target_data,
-                                     const scanner::Intransitive_includes& target_includes);
+                                     const scanner::Intransitive_includes& target_includes,
+                                     Mode mode);
 } // namespace lwyi

@@ -74,6 +74,26 @@ auto to_string(std::vector<const char*> args)
                                      }));
 }
 
+TEST_CASE("cli: parse_arguments with no arguments", "[lwyi]")
+{
+  std::vector<const char*> args{"exe_name"};
+  INFO(to_string(args));
+
+  const auto argc = static_cast<int>(args.size());
+  const auto argv = args.data();
+  auto result = cli::parse_arguments(argc, argv);
+  REQUIRE(result.has_value());
+
+  const auto& options = result.value();
+  CHECK(options.binary_dir.empty());
+  CHECK(options.targets.empty());
+  CHECK(options.tool_command.empty());
+  CHECK(options.color_output == message::Color_output::automatic);
+  CHECK(options.message_level == message::Message_level::normal);
+  CHECK(options.num_threads == 0U);
+  CHECK(options.mode == lwyi::Mode::Strict);
+}
+
 TEST_CASE("cli: parse_arguments for help", "[lwyi]")
 {
   std::vector<std::vector<const char*>> args_list{
@@ -420,4 +440,30 @@ TEST_CASE("cli: parse_arguments for debug", "[lwyi]")
   const auto& options = result.value();
   CHECK(options.message_level == message::Message_level::debug);
   CHECK(options.binary_dir == "some/dir");
+}
+
+TEST_CASE("lwyi: parse_arguments for permissive", "[lwyi]")
+{
+  std::vector<std::vector<const char*>> args_list{
+    {"exe_name", "--permissive", "-d", "some/dir", "-t", "one", "two", "three"},
+    {"exe_name", "-d", "some/dir", "--permissive", "-t", "one", "two", "three"},
+    {"exe_name", "-d", "some/dir", "-t", "one", "two", "three", "--permissive"},
+  };
+  for (const auto& args : args_list)
+  {
+    INFO(to_string(args));
+
+    const auto argc = static_cast<int>(args.size());
+    const auto argv = args.data();
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.binary_dir == "some/dir");
+    REQUIRE(options.targets.size() == 3U);
+    CHECK(options.targets[0] == "one");
+    CHECK(options.targets[1] == "two");
+    CHECK(options.targets[2] == "three");
+    CHECK(options.mode == lwyi::Mode::Permissive);
+  }
 }

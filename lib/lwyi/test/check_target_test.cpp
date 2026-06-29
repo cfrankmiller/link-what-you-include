@@ -111,10 +111,30 @@ TEST_CASE("lwyi: check_target", "[lwyi]")
       intransitive_includes.includes = {{"/liba/include/one.h", {{"/libq/src/one.cpp", 12U}}},
                                         {"/libb/include/one.h", {{"/libq/src/two.cpp", 34U}}}};
 
-      WHEN("check_target is called")
+      WHEN("check_target is called in strict mode")
       {
-        auto errors =
-          lwyi::check_target(target_model, target, libq_target_data, intransitive_includes);
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Strict);
+
+        THEN("no errors are returned")
+        {
+          CHECK(errors.empty());
+          if (!errors.empty())
+          {
+            dump(errors);
+          }
+        }
+      }
+      WHEN("check_target is called in permissive mode")
+      {
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Permissive);
 
         THEN("no errors are returned")
         {
@@ -134,10 +154,28 @@ TEST_CASE("lwyi: check_target", "[lwyi]")
       intransitive_includes.includes = {{"/liba/include/one.h", {{"/libq/src/one.cpp", 12U}}},
                                         {"/libb/include/one.h", {{"/libq/src/two.cpp", 34U}}}};
 
-      WHEN("check_target is called")
+      WHEN("check_target is called in strict mode")
       {
-        auto errors =
-          lwyi::check_target(target_model, target, libq_target_data, intransitive_includes);
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Strict);
+
+        THEN("an error is produced")
+        {
+          REQUIRE(errors.size() == 1);
+          CHECK(errors[0].linked_visibility == lwyi::Dependency_visibility::public_scope);
+          CHECK(errors[0].included_visibility == lwyi::Dependency_visibility::private_scope);
+        }
+      }
+      WHEN("check_target is called in permissive mode")
+      {
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Permissive);
 
         THEN("an error is produced")
         {
@@ -156,15 +194,34 @@ TEST_CASE("lwyi: check_target", "[lwyi]")
       intransitive_includes.includes = {
         {"/libb/include/one.h", {{"/libq/src/two.cpp", 34U}}}};
 
-      WHEN("check_target is called")
+      WHEN("check_target is called in strict mode")
       {
-        auto errors =
-          lwyi::check_target(target_model, target, libq_target_data, intransitive_includes);
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Strict);
         THEN("an error is produced")
         {
           REQUIRE(errors.size() == 1);
           CHECK(errors[0].linked_visibility == lwyi::Dependency_visibility::public_scope);
           CHECK(errors[0].included_visibility == lwyi::Dependency_visibility::interface_scope);
+        }
+      }
+      WHEN("check_target is called in permissive mode")
+      {
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Permissive);
+        THEN("no errors are returned")
+        {
+          CHECK(errors.empty());
+          if (!errors.empty())
+          {
+            dump(errors);
+          }
         }
       }
     }
@@ -178,10 +235,27 @@ TEST_CASE("lwyi: check_target", "[lwyi]")
       intransitive_includes.includes = {{"/liba/include/one.h", {{"/libq/src/one.cpp", 12U}}},
                                         {"/libb/include/one.h", {{"/libq/src/two.cpp", 34U}}}};
 
-      WHEN("check_target is called")
+      WHEN("check_target is called in strict mode")
       {
-        auto errors =
-          lwyi::check_target(target_model, target, libq_target_data, intransitive_includes);
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Strict);
+        THEN("an error is produced")
+        {
+          REQUIRE(errors.size() == 1);
+          CHECK(errors[0].linked_visibility == lwyi::Dependency_visibility::private_scope);
+          CHECK(errors[0].included_visibility == lwyi::Dependency_visibility::public_scope);
+        }
+      }
+      WHEN("check_target is called in permissive mode")
+      {
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Permissive);
         THEN("an error is produced")
         {
           REQUIRE(errors.size() == 1);
@@ -200,10 +274,27 @@ TEST_CASE("lwyi: check_target", "[lwyi]")
       intransitive_includes.includes = {
         {"/liba/include/one.h", {{"/libq/src/one.cpp", 12U}}}};
 
-      WHEN("check_target is called")
+      WHEN("check_target is called in strict mode")
       {
-        auto errors =
-          lwyi::check_target(target_model, target, libq_target_data, intransitive_includes);
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Strict);
+        THEN("an error is produced")
+        {
+          REQUIRE(errors.size() == 1);
+          CHECK(errors[0].linked_visibility == lwyi::Dependency_visibility::private_scope);
+          CHECK(errors[0].included_visibility == lwyi::Dependency_visibility::interface_scope);
+        }
+      }
+      WHEN("check_target is called in permissive mode")
+      {
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Permissive);
         THEN("an error is produced")
         {
           REQUIRE(errors.size() == 1);
@@ -223,10 +314,27 @@ TEST_CASE("lwyi: check_target", "[lwyi]")
         {"/libb/include/one.h", {{"/libq/src/two.cpp", 34U}}},
         {"/libc/include/one.h", {{"/libq/src/one.cpp", 13U}}}};
 
-      WHEN("check_target is called")
+      WHEN("check_target is called in strict mode")
       {
-        auto errors =
-          lwyi::check_target(target_model, target, libq_target_data, intransitive_includes);
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Strict);
+        THEN("an error is produced")
+        {
+          REQUIRE(errors.size() == 1);
+          CHECK(errors[0].linked_visibility == lwyi::Dependency_visibility::interface_scope);
+          CHECK(errors[0].included_visibility == lwyi::Dependency_visibility::public_scope);
+        }
+      }
+      WHEN("check_target is called in permissive mode")
+      {
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Permissive);
         THEN("an error is produced")
         {
           REQUIRE(errors.size() == 1);
@@ -245,10 +353,27 @@ TEST_CASE("lwyi: check_target", "[lwyi]")
         {"/libb/include/one.h", {{"/libq/src/two.cpp", 34U}}},
         {"/libc/include/one.h", {{"/libq/src/one.cpp", 13U}}}};
 
-      WHEN("check_target is called")
+      WHEN("check_target is called in strict mode")
       {
-        auto errors =
-          lwyi::check_target(target_model, target, libq_target_data, intransitive_includes);
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Strict);
+        THEN("an error is produced")
+        {
+          REQUIRE(errors.size() == 1);
+          CHECK(errors[0].linked_visibility == lwyi::Dependency_visibility::interface_scope);
+          CHECK(errors[0].included_visibility == lwyi::Dependency_visibility::private_scope);
+        }
+      }
+      WHEN("check_target is called in permissive mode")
+      {
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Permissive);
         THEN("an error is produced")
         {
           REQUIRE(errors.size() == 1);
@@ -268,10 +393,27 @@ TEST_CASE("lwyi: check_target", "[lwyi]")
         {"/libb/include/one.h", {{"/libq/src/two.cpp", 34U}}},
         {"/libd/include/one.h", {{"/libd/src/two.cpp", 34U}}}};
 
-      WHEN("check_target is called")
+      WHEN("check_target is called in strict mode")
       {
-        auto errors =
-          lwyi::check_target(target_model, target, libq_target_data, intransitive_includes);
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Strict);
+        THEN("an error is produced")
+        {
+          REQUIRE(errors.size() == 1);
+          CHECK(errors[0].linked_visibility == lwyi::Dependency_visibility::none);
+          CHECK(errors[0].included_visibility == lwyi::Dependency_visibility::private_scope);
+        }
+      }
+      WHEN("check_target is called in permissive mode")
+      {
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Permissive);
         THEN("an error is produced")
         {
           REQUIRE(errors.size() == 1);
@@ -290,10 +432,27 @@ TEST_CASE("lwyi: check_target", "[lwyi]")
       intransitive_includes.includes = {{"/liba/include/one.h", {{"/libq/src/one.cpp", 12U}}},
                                         {"/libb/include/one.h", {{"/libq/src/two.cpp", 34U}}}};
 
-      WHEN("check_target is called")
+      WHEN("check_target is called in strict mode")
       {
-        auto errors =
-          lwyi::check_target(target_model, target, libq_target_data, intransitive_includes);
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Strict);
+        THEN("an error is produced")
+        {
+          REQUIRE(errors.size() == 1);
+          CHECK(errors[0].linked_visibility == lwyi::Dependency_visibility::none);
+          CHECK(errors[0].included_visibility == lwyi::Dependency_visibility::interface_scope);
+        }
+      }
+      WHEN("check_target is called in permissive mode")
+      {
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Permissive);
         THEN("an error is produced")
         {
           REQUIRE(errors.size() == 1);
@@ -314,10 +473,27 @@ TEST_CASE("lwyi: check_target", "[lwyi]")
         {"/libb/include/one.h", {{"/libq/src/two.cpp", 34U}}},
         {"/libd/include/one.h", {{"/libd/src/two.cpp", 34U}}}};
 
-      WHEN("check_target is called")
+      WHEN("check_target is called in strict mode")
       {
-        auto errors =
-          lwyi::check_target(target_model, target, libq_target_data, intransitive_includes);
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Strict);
+        THEN("an error is produced")
+        {
+          REQUIRE(errors.size() == 1);
+          CHECK(errors[0].linked_visibility == lwyi::Dependency_visibility::none);
+          CHECK(errors[0].included_visibility == lwyi::Dependency_visibility::public_scope);
+        }
+      }
+      WHEN("check_target is called in permissive mode")
+      {
+        auto errors = lwyi::check_target(target_model,
+                                         target,
+                                         libq_target_data,
+                                         intransitive_includes,
+                                         lwyi::Mode::Permissive);
         THEN("an error is produced")
         {
           REQUIRE(errors.size() == 1);

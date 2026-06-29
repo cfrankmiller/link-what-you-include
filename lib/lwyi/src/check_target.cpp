@@ -47,7 +47,8 @@ struct Visibility
 std::vector<LWYI_error> check_target(const target_model::Target_model& target_model,
                                      [[maybe_unused]] const target_model::Target& target,
                                      const target_model::Target_data& target_data,
-                                     const scanner::Intransitive_includes& target_includes)
+                                     const scanner::Intransitive_includes& target_includes,
+                                     Mode mode)
 
 {
   std::map<target_model::Target, Visibility> visibility_map;
@@ -93,6 +94,13 @@ std::vector<LWYI_error> check_target(const target_model::Target_model& target_mo
     {
       continue;
     }
+    if (mode == Mode::Permissive &&
+        visibility.linked_visibility == lwyi::Dependency_visibility::public_scope &&
+        visibility.included_visibility == lwyi::Dependency_visibility::interface_scope)
+    {
+      continue;
+    }
+
     LWYI_error error{dep, visibility.linked_visibility, visibility.included_visibility, {}};
     if (!!(visibility.included_visibility & Dependency_visibility::interface_scope))
     {
