@@ -73,16 +73,8 @@ auto single_diff(const std::set<target_model::Target>* lhs,
   }
   else if (lhs && rhs)
   {
-    std::set_difference(lhs->begin(),
-                        lhs->end(),
-                        rhs->begin(),
-                        rhs->end(),
-                        std::back_inserter(diff.left_only));
-    std::set_difference(rhs->begin(),
-                        rhs->end(),
-                        lhs->begin(),
-                        lhs->end(),
-                        std::back_inserter(diff.right_only));
+    std::ranges::set_difference(*lhs, *rhs, std::back_inserter(diff.left_only));
+    std::ranges::set_difference(*rhs, *lhs, std::back_inserter(diff.right_only));
   }
 
   return diff;
@@ -124,7 +116,7 @@ auto cluster_diff(const std::vector<std::set<target_model::Target>>& lhs,
   }
 
   std::vector<size_t> permutation(result_size);
-  std::iota(permutation.begin(), permutation.end(), 0);
+  std::ranges::iota(permutation, 0);
 
   int32_t max_score = -1;
   std::vector<size_t> max_permutation;
@@ -142,7 +134,7 @@ auto cluster_diff(const std::vector<std::set<target_model::Target>>& lhs,
       max_permutation = permutation;
     }
   }
-  while (std::next_permutation(permutation.begin(), permutation.end()));
+  while (std::ranges::next_permutation(permutation).found);
 
   std::vector<Cluster_diff> result(result_size);
   for (size_t i = 0; i < result_size; ++i)

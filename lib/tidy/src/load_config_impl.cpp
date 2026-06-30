@@ -3,10 +3,10 @@
 #include <target_model/target.hpp>
 #include <tidy/config.hpp>
 
-#include <fmt/format.h>
 #include <simdjson.h>
-#include <tl/expected.hpp>
 
+#include <expected>
+#include <format>
 #include <map>
 #include <set>
 #include <string>
@@ -17,14 +17,14 @@
 namespace tidy
 {
 auto load_config_impl(const simdjson::padded_string& raw_config)
-  -> tl::expected<Config, std::string>
+  -> std::expected<Config, std::string>
 {
   simdjson::ondemand::parser parser;
   simdjson::ondemand::document doc;
   if (auto error = parser.iterate(raw_config).get(doc))
   {
-    return tl::unexpected(
-      fmt::format("Error parsing json: {}\n", simdjson::error_message(error)));
+    return std::unexpected(
+      std::format("Error parsing json: {}\n", simdjson::error_message(error)));
   }
 
   Config config;
@@ -32,16 +32,16 @@ auto load_config_impl(const simdjson::padded_string& raw_config)
   simdjson::ondemand::object forbidden_dependencies;
   if (auto error = doc["forbidden_dependencies"].get_object().get(forbidden_dependencies))
   {
-    return tl::unexpected(fmt::format("Error parsing forbidden_dependencies: {}\n",
-                                      simdjson::error_message(error)));
+    return std::unexpected(std::format("Error parsing forbidden_dependencies: {}\n",
+                                       simdjson::error_message(error)));
   }
   for (auto key_value : forbidden_dependencies)
   {
     std::string_view key;
     if (auto error = key_value.unescaped_key().get(key))
     {
-      return tl::unexpected(fmt::format("Error parsing forbidden_dependencies: {}\n",
-                                        simdjson::error_message(error)));
+      return std::unexpected(std::format("Error parsing forbidden_dependencies: {}\n",
+                                         simdjson::error_message(error)));
     }
     target_model::Target target{std::string(key)};
     std::set<target_model::Target> dependencies;
@@ -49,8 +49,8 @@ auto load_config_impl(const simdjson::padded_string& raw_config)
     simdjson::ondemand::array array;
     if (auto error = key_value.value().get_array().get(array))
     {
-      return tl::unexpected(fmt::format("Error parsing forbidden_dependencies: {}\n",
-                                        simdjson::error_message(error)));
+      return std::unexpected(std::format("Error parsing forbidden_dependencies: {}\n",
+                                         simdjson::error_message(error)));
     }
     for (std::string_view e : array)
     {
@@ -62,8 +62,8 @@ auto load_config_impl(const simdjson::padded_string& raw_config)
   simdjson::ondemand::array allowed_clusters_array;
   if (auto error = doc["allowed_clusters"].get_array().get(allowed_clusters_array))
   {
-    return tl::unexpected(fmt::format("Error parsing allowed_clusters: {}\n",
-                                      simdjson::error_message(error)));
+    return std::unexpected(std::format("Error parsing allowed_clusters: {}\n",
+                                       simdjson::error_message(error)));
   }
 
   for (auto targets_array : allowed_clusters_array)
@@ -71,8 +71,8 @@ auto load_config_impl(const simdjson::padded_string& raw_config)
     simdjson::ondemand::array cluster_array;
     if (auto error = targets_array.get_array().get(cluster_array))
     {
-      return tl::unexpected(fmt::format("Error parsing allowed_clusters: {}\n",
-                                        simdjson::error_message(error)));
+      return std::unexpected(std::format("Error parsing allowed_clusters: {}\n",
+                                         simdjson::error_message(error)));
     }
     std::set<target_model::Target> cluster;
     for (auto target_string : cluster_array)
@@ -80,8 +80,8 @@ auto load_config_impl(const simdjson::padded_string& raw_config)
       std::string_view target_name;
       if (auto error = target_string.get(target_name))
       {
-        return tl::unexpected(
-          fmt::format("Error parsing target: {}\n", simdjson::error_message(error)));
+        return std::unexpected(
+          std::format("Error parsing target: {}\n", simdjson::error_message(error)));
       }
 
       cluster.insert(target_model::Target{std::string(target_name)});

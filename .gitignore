@@ -2,5 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 build
+3rdparty
 compile_commands.json
 CMakeUserPresets.json

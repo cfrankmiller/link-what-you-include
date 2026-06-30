@@ -18,7 +18,7 @@ include(GNUInstallDirs)
 
 cmake_dependent_option(ENABLE_DOGFOODING "Enable support for running link-what-you-include on itself" ON BUILD_TESTING OFF)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
@@ -65,8 +65,6 @@ else()
   target_compile_options(clangTooling INTERFACE -fno-rtti)
 endif()
 
-find_package(fmt REQUIRED)
-find_package(tl-expected REQUIRED)
 find_package(simdjson REQUIRED)
 
 if(BUILD_TESTING)
@@ -78,8 +76,6 @@ if(ENABLE_DOGFOODING)
   include(cmake/link_what_you_include.cmake)
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
   link_what_you_include(clangTooling clang)
-  link_what_you_include(fmt::fmt fmt)
-  link_what_you_include(tl::expected tl)
 endif()
 
 ################################################################################

@@ -5,12 +5,11 @@
 
 #include <lwyi/command_options.hpp>
 
-#include <tl/expected.hpp>
-
+#include <expected>
 #include <string>
 
 namespace lwyi
 {
 auto parse_arguments(int argc, const char* const* argv)
-  -> tl::expected<Command_options, std::string>;
+  -> std::expected<Command_options, std::string>;
 } // namespace lwyi

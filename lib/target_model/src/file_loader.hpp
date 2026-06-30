@@ -3,8 +3,7 @@
 
 #pragma once
 
-#include <tl/expected.hpp>
-
+#include <expected>
 #include <filesystem>
 
 namespace target_model
@@ -14,7 +13,7 @@ class File_loader
 public:
   virtual ~File_loader() = default;
   [[nodiscard]] virtual auto load(const std::filesystem::path& path)
-    -> tl::expected<void, std::string> = 0;
+    -> std::expected<void, std::string> = 0;
   [[nodiscard]] virtual auto data() const -> const char* = 0;
   [[nodiscard]] virtual auto size() const -> size_t = 0;
   [[nodiscard]] virtual auto size_with_padding() const -> size_t = 0;

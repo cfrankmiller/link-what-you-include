@@ -3,14 +3,12 @@
 
 #pragma once
 
-#include <fmt/core.h>
-#include <fmt/format.h>
-#include <tl/expected.hpp>
-
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <expected>
+#include <format>
 #include <iterator>
 #include <sstream>
 #include <string>
@@ -67,14 +65,14 @@ public:
   }
 
   template <typename Tit>
-  [[nodiscard]] auto parse(Tit begin, Tit end) const -> tl::expected<Toptions, std::string>
+  [[nodiscard]] auto parse(Tit begin, Tit end) const -> std::expected<Toptions, std::string>
   {
     Toptions options;
     auto error_string =
       parse_impl_(options, begin, end, std::make_index_sequence<sizeof...(T)>{});
     if (!error_string.empty())
     {
-      return tl::unexpected(std::move(error_string));
+      return std::unexpected(std::move(error_string));
     }
 
     return options;
@@ -99,7 +97,7 @@ private:
                                 ...);
       if (no_progress)
       {
-        return fmt::format("unrecognized option: {}", *begin);
+        return std::format("unrecognized option: {}", *begin);
       }
       if (!error_string.empty())
       {
@@ -137,7 +135,7 @@ private:
       {
         if (!arg_tail.empty())
         {
-          error_string = fmt::format("argument {} does not expect a value", arg);
+          error_string = std::format("argument {} does not expect a value", arg);
           return begin;
         }
         options.*value = true;
@@ -150,7 +148,7 @@ private:
           ++begin;
           if (begin == end)
           {
-            error_string = fmt::format("argument {} expects a value", arg);
+            error_string = std::format("argument {} expects a value", arg);
             return begin;
           }
         }
@@ -162,7 +160,7 @@ private:
           assert(!param.empty());
           if (param[0] == '-')
           {
-            error_string = fmt::format("argument {} expects a value, got {}.", arg, param);
+            error_string = std::format("argument {} expects a value, got {}.", arg, param);
             return begin;
           }
 
@@ -175,7 +173,7 @@ private:
           if (!arg_tail.empty())
           {
             error_string =
-              fmt::format("argument {} must have a space before the first value.", arg);
+              std::format("argument {} must have a space before the first value.", arg);
             return begin;
           }
           for (; begin != end; ++begin)
@@ -186,7 +184,7 @@ private:
             {
               if ((options.*value).empty())
               {
-                error_string = fmt::format("argument {} expects one or more values.", arg);
+                error_string = std::format("argument {} expects one or more values.", arg);
               }
               return begin;
             }
@@ -201,7 +199,7 @@ private:
           assert(!param.empty());
           if (param[0] == '-')
           {
-            error_string = fmt::format("argument {} expects a value, got {}.", arg, param);
+            error_string = std::format("argument {} expects a value, got {}.", arg, param);
             return begin;
           }
 
@@ -211,7 +209,7 @@ private:
           if (ss.bad())
           {
             error_string =
-              fmt::format("argument {} expects an integer value, got {}.", arg, param);
+              std::format("argument {} expects an integer value, got {}.", arg, param);
             return begin;
           }
 

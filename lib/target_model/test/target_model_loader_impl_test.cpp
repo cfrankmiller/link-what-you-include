@@ -10,9 +10,9 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <simdjson.h>
-#include <tl/expected.hpp>
 
 #include <cstring>
+#include <expected>
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -36,7 +36,7 @@ public:
   }
 
   [[nodiscard]] auto load(const std::filesystem::path& path)
-    -> tl::expected<void, std::string> override
+    -> std::expected<void, std::string> override
   {
     static_cast<void>(path);
     return {};
@@ -122,18 +122,15 @@ TEST_CASE("target_model: target_model_loader_impl can load a valid json file", "
   const auto& liba_info = data.value().get(); // NOLINT(bugprone-unchecked-optional-access)
   CHECK(liba_info.interface_include_directories.empty());
   CHECK(liba_info.interface_headers ==
-        std::unordered_set<std::filesystem::path, target_model::Path_hash>{
-          "/some/path/liba/one.h",
-          "/some/path/liba/two.h"});
+        std::unordered_set<std::filesystem::path>{"/some/path/liba/one.h",
+                                                  "/some/path/liba/two.h"});
   CHECK(liba_info.interface_dependencies.empty());
   CHECK(liba_info.sources ==
-        std::unordered_set<std::filesystem::path, target_model::Path_hash>{
-          "/some/other/path/liba/one.cpp",
-          "/some/other/path/liba/two.cpp"});
+        std::unordered_set<std::filesystem::path>{"/some/other/path/liba/one.cpp",
+                                                  "/some/other/path/liba/two.cpp"});
   CHECK(liba_info.verify_interface_header_sets_sources ==
-        std::unordered_set<std::filesystem::path, target_model::Path_hash>{
-          "/some/path/liba/one.h.cpp",
-          "/some/path/liba/two.h.cpp"});
+        std::unordered_set<std::filesystem::path>{"/some/path/liba/one.h.cpp",
+                                                  "/some/path/liba/two.h.cpp"});
   CHECK(liba_info.dependencies.empty());
 
   data = target_model.get_target_data(target_model::Target{"libb"});
@@ -141,9 +138,8 @@ TEST_CASE("target_model: target_model_loader_impl can load a valid json file", "
   const auto& libb_info = data.value().get(); // NOLINT(bugprone-unchecked-optional-access)
   CHECK(libb_info.interface_include_directories.empty());
   CHECK(libb_info.interface_headers ==
-        std::unordered_set<std::filesystem::path, target_model::Path_hash>{
-          "/some/path/libb/one.h",
-          "/some/path/libb/two.h"});
+        std::unordered_set<std::filesystem::path>{"/some/path/libb/one.h",
+                                                  "/some/path/libb/two.h"});
   CHECK(libb_info.interface_dependencies.empty());
   CHECK(libb_info.sources.empty());
   CHECK(libb_info.dependencies == std::unordered_set<target_model::Target>{{"liba"}});
@@ -151,10 +147,8 @@ TEST_CASE("target_model: target_model_loader_impl can load a valid json file", "
   data = target_model.get_target_data(target_model::Target{"libc"});
   REQUIRE(data.has_value());
   const auto& libc_info = data.value().get(); // NOLINT(bugprone-unchecked-optional-access)
-  CHECK(
-    libc_info.interface_include_directories ==
-    std::unordered_set<std::filesystem::path, target_model::Path_hash>{"/some/path/libc/",
-                                                                       "/other/path/libc/"});
+  CHECK(libc_info.interface_include_directories ==
+        std::unordered_set<std::filesystem::path>{"/some/path/libc/", "/other/path/libc/"});
   CHECK(libc_info.interface_headers.empty());
   CHECK(libc_info.interface_dependencies ==
         std::unordered_set<target_model::Target>{{"libb"}});

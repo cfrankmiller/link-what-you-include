@@ -6,8 +6,7 @@
 #include <scanner/include.hpp>
 #include <scanner/scan.hpp>
 
-#include <tl/expected.hpp>
-
+#include <expected>
 #include <filesystem>
 #include <map>
 #include <set>
@@ -66,5 +65,5 @@ auto scan_impl(const llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>& file_syste
                clang::tooling::dependencies::DependencyScanningFilesystemSharedCache& dep_cache,
                const target_model::Target_data& target_data,
                const Compile_command& compile_command)
-  -> tl::expected<Include_data, std::string>;
+  -> std::expected<Include_data, std::string>;
 } // namespace scanner

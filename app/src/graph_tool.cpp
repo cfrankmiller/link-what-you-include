@@ -9,16 +9,15 @@
 #include <target_model/target_model.hpp>
 #include <util/arg_parser.hpp>
 
-#include <fmt/base.h>
-#include <fmt/format.h>
-#include <tl/expected.hpp>
-
 #include <cassert>
 #include <cstdio>
+#include <expected>
 #include <filesystem>
+#include <format>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <print>
 #include <set>
 #include <string>
 #include <string_view>
@@ -48,7 +47,7 @@ constexpr auto parser = util::arg_parser<Options>()
 
 auto usage(std::string_view name) -> std::string
 {
-  return fmt::format(usage_string, name);
+  return std::format(usage_string, name);
 }
 
 auto open_file(const std::filesystem::path& path, const char* mode)
@@ -68,7 +67,7 @@ auto graph_tool(const target_model::Target_model& target_model,
 
   if (!result.has_value())
   {
-    fmt::print("{}\n{}\n", result.error(), usage("graph"));
+    std::print("{}\n{}\n", result.error(), usage("graph"));
     return 1;
   }
 
@@ -76,13 +75,13 @@ auto graph_tool(const target_model::Target_model& target_model,
 
   if (options.help)
   {
-    fmt::print("{}\n", usage("graph"));
+    std::print("{}\n", usage("graph"));
     return 1;
   }
 
   if (options.output_filename.empty())
   {
-    fmt::print("An output file is required.\n{}\n", usage("graph"));
+    std::print("An output file is required.\n{}\n", usage("graph"));
     return 1;
   }
 
@@ -134,38 +133,38 @@ auto graph_tool(const target_model::Target_model& target_model,
     auto file = open_file(graph_path.string().c_str(), "w");
     if (!file)
     {
-      fmt::print("Failed to open file {}\n", graph_path.string());
+      std::print("Failed to open file {}\n", graph_path.string());
       return 1;
     }
 
-    fmt::print(file.get(), "digraph dependencies {{\n");
+    std::print(file.get(), "digraph dependencies {{\n");
 
     // nodes for the clusters
     for (size_t i = 0; i < components.size(); ++i)
     {
       const auto& comp = components[i];
-      fmt::print(file.get(), "  {} [shape=box label=\"", i);
+      std::print(file.get(), "  {} [shape=box label=\"", i);
       bool first = true;
       for (const auto& target : comp)
       {
         if (first)
         {
           first = false;
-          fmt::print(file.get(), "{}", target.name);
+          std::print(file.get(), "{}", target.name);
         }
         else
         {
-          fmt::print(file.get(), "\\n{}", target.name);
+          std::print(file.get(), "\\n{}", target.name);
         }
       }
-      fmt::print(file.get(), "\"]\n");
+      std::print(file.get(), "\"]\n");
     }
 
     for (const auto& edge : edges)
     {
-      fmt::print(file.get(), "  {} -> {};\n", edge.first, edge.second);
+      std::print(file.get(), "  {} -> {};\n", edge.first, edge.second);
     }
-    fmt::print(file.get(), "}}\n");
+    std::print(file.get(), "}}\n");
   }
 
   // individual graphs for each strongly connected component
@@ -177,11 +176,11 @@ auto graph_tool(const target_model::Target_model& target_model,
     auto file = open_file(component_path.string().c_str(), "w");
     if (!file)
     {
-      fmt::print("Failed to open file {}\n", component_path.string());
+      std::print("Failed to open file {}\n", component_path.string());
       return 1;
     }
 
-    fmt::print(file.get(), "digraph {} {{\n", i);
+    std::print(file.get(), "digraph {} {{\n", i);
     for (const auto& target : component)
     {
       if (auto target_data = pruned_target_model.get_target_data(target))
@@ -190,12 +189,12 @@ auto graph_tool(const target_model::Target_model& target_model,
         {
           if (0 < component.count(dep))
           {
-            fmt::print(file.get(), "  {} -> {};\n", target.name, dep.name);
+            std::print(file.get(), "  {} -> {};\n", target.name, dep.name);
           }
         }
       }
     }
-    fmt::print(file.get(), "}}\n");
+    std::print(file.get(), "}}\n");
   }
 
   return 0;

@@ -15,35 +15,28 @@ target_sources(lib_lwyi
     src/dependency_visibility.cpp
     src/strongly_connected_dependencies.cpp
   )
-target_include_directories(lib_lwyi
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  )
 target_link_libraries(lib_lwyi
   PUBLIC
     lib_scanner
     lib_target_model
-    tl::expected
   PRIVATE
     lib_util
-    fmt::fmt
   )
 
 if(BUILD_TESTING)
-  add_executable(lib_lwyi_test
-    test/check_target_test.cpp
-    test/parse_arguments_test.cpp
-    test/dependency_visibility_test.cpp
-    test/strongly_connected_dependencies_test.cpp
-    )
-  target_include_directories(lib_lwyi_test
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  add_executable(lib_lwyi_test)
+  target_sources(lib_lwyi_test
+    PRIVATE
+      test/check_target_test.cpp
+      test/parse_arguments_test.cpp
+      test/dependency_visibility_test.cpp
+      test/strongly_connected_dependencies_test.cpp
     )
   target_link_libraries(lib_lwyi_test
     PRIVATE
       lib_lwyi
       lib_scanner
       lib_target_model
-      fmt::fmt
       Catch2::Catch2WithMain
     )
   catch_discover_tests(lib_lwyi_test ADD_TAGS_AS_LABELS)

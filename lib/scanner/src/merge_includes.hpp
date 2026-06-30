@@ -6,8 +6,7 @@
 #include <scanner/scan.hpp>
 #include <src/scan_impl.hpp>
 
-#include <tl/expected.hpp>
-
+#include <expected>
 #include <string>
 #include <vector>
 
@@ -15,6 +14,6 @@ namespace scanner
 {
 struct Include_data;
 
-auto merge_includes(std::vector<tl::expected<Include_data, std::string>> include_data_array)
-  -> tl::expected<Intransitive_includes, std::string>;
+auto merge_includes(std::vector<std::expected<Include_data, std::string>> include_data_array)
+  -> std::expected<Intransitive_includes, std::string>;
 } // namespace scanner

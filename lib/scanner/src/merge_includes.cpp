@@ -6,16 +6,15 @@
 #include <scanner/scan.hpp>
 #include <src/scan_impl.hpp>
 
-#include <tl/expected.hpp>
-
+#include <expected>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace scanner
 {
-auto merge_includes(std::vector<tl::expected<Include_data, std::string>> include_data_array)
-  -> tl::expected<Intransitive_includes, std::string>
+auto merge_includes(std::vector<std::expected<Include_data, std::string>> include_data_array)
+  -> std::expected<Intransitive_includes, std::string>
 {
   Include_set interface_includes;
   Include_set includes;
@@ -24,7 +23,7 @@ auto merge_includes(std::vector<tl::expected<Include_data, std::string>> include
     if (!eincdata.has_value())
     {
       // TODO: collect all errors
-      return tl::unexpected(eincdata.error());
+      return std::unexpected(eincdata.error());
     }
 
     includes.merge(eincdata->includes);

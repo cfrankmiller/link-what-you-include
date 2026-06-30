@@ -22,21 +22,21 @@
 #include <clang/Serialization/PCHContainerOperations.h>
 #include <clang/Tooling/DependencyScanning/DependencyScanningFilesystem.h>
 #include <clang/Tooling/Tooling.h>
-#include <fmt/base.h>
-#include <fmt/format.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
 #include <llvm/ADT/Twine.h>
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/VirtualFileSystem.h>
-#include <tl/expected.hpp>
 
 #include <cassert>
 #include <cstdint>
+#include <expected>
 #include <filesystem>
+#include <format>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <print>
 #include <string>
 #include <utility>
 #include <vector>
@@ -56,7 +56,7 @@ auto log(TArgs&&... args)
   static constexpr bool enable_log = false;
   if constexpr (enable_log)
   {
-    fmt::print(std::forward<TArgs>(args)...);
+    std::print(std::forward<TArgs>(args)...);
   }
 }
 
@@ -281,7 +281,7 @@ private:
       if (llvm::ErrorOr<clang::tooling::dependencies::EntryRef> entry =
             dep_fs->getOrCreateFileSystemEntry(file.getName()))
       {
-          return entry->getDirectiveTokens();
+        return entry->getDirectiveTokens();
       }
       return std::nullopt;
     };
@@ -334,11 +334,11 @@ auto scan_impl(const llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>& file_syste
                clang::tooling::dependencies::DependencyScanningFilesystemSharedCache& dep_cache,
                const target_model::Target_data& target_data,
                const Compile_command& compile_command)
-  -> tl::expected<Include_data, std::string>
+  -> std::expected<Include_data, std::string>
 {
   if (file_system->setCurrentWorkingDirectory(compile_command.cwd.string()))
   {
-    return tl::unexpected(fmt::format("Cannot chdir into {}", compile_command.cwd.string()));
+    return std::unexpected(std::format("Cannot chdir into {}", compile_command.cwd.string()));
   }
 
   Include_data include_data;
@@ -353,8 +353,8 @@ auto scan_impl(const llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>& file_syste
                                             pch_container_ops);
   if (!invocation.run())
   {
-    return tl::unexpected(
-      fmt::format("Error while processing {}.\n", compile_command.source.string()));
+    return std::unexpected(
+      std::format("Error while processing {}.\n", compile_command.source.string()));
   }
 
   return include_data;

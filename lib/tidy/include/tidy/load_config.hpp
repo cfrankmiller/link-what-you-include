@@ -5,12 +5,11 @@
 
 #include <tidy/config.hpp>
 
-#include <tl/expected.hpp>
-
+#include <expected>
 #include <filesystem>
 #include <string>
 
 namespace tidy
 {
-auto load_config(std::filesystem::path config_path) -> tl::expected<Config, std::string>;
+auto load_config(std::filesystem::path config_path) -> std::expected<Config, std::string>;
 }

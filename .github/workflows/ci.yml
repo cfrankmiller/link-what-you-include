@@ -20,51 +20,53 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-2025-vs2026, macos-15]
+        os: [ubuntu-24.04, windows-2025-vs2026, macos-26]
 
     steps:
-      - name: Setup msvc environment
+      - name: Setup windows environment
         if: runner.os == 'Windows'
         uses: TheMrMilchmann/setup-msvc-dev@v4
         with:
           arch: x64
 
-      - name: Setup Conan
-        uses: conan-io/setup-conan@ed3942a6883243f4af84e13e49c972f9440fa1c2
-        with:
-          cache_packages: true
+      - name: Setup linux environment
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt install clang-tidy-20
+          echo "CXX=/usr/bin/g++-14" >> $GITHUB_ENV
+          echo "CC=/usr/bin/gcc-14" >> $GITHUB_ENV
+
+      - name: Setup macos environment
+        if: runner.os == 'MacOS'
+        run: |
+          sudo xcode-select -switch /Library/Developer/CommandLineTools
+          brew install llvm@21
+          echo "SDKROOT=$(xcrun --show-sdk-path)" >> $GITHUB_ENV
+          echo "CXX=$(brew --prefix llvm@21)/bin/clang++" >> $GITHUB_ENV
+          echo "CC=$(brew --prefix llvm@21)/bin/clang" >> $GITHUB_ENV
 
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Conan install release
-        shell: bash
-        run: |
-          conan install . -s compiler.cppstd=17 -s build_type=Release --build=missing -of build/release
-
-      - name: Conan install debug
-        if: github.event_name == 'schedule' && runner.os == 'Linux'
-        shell: bash
-        run: |
-          conan install . -s compiler.cppstd=17 -s build_type=Debug --build=missing -of build/debug
-
-      - name: Cache clangtooling
-        id: cache-clangtooling
+      - name: Cache 3rdparty
+        id: cache-3rdparty
         uses: actions/cache@v5
         with:
-          path: ./build/llvm
-          key: clangtooling_${{ matrix.os }}_${{ hashFiles('tools/build_clangtooling.sh') }}
+          path: ./3rdparty
+          key: 3rdparty_${{ matrix.os }}_${{ hashFiles('tools/build_*.sh') }}
 
-      - name: Build clangtooling
-        if: steps.cache-clangtooling.outputs.cache-hit != 'true'
+      - name: Build 3rdparty
+        if: steps.cache-3rdparty.outputs.cache-hit != 'true'
         shell: bash
         run: |
+          bash ./tools/build_catch2.sh
           bash ./tools/build_clangtooling.sh
+          bash ./tools/build_simdjson.sh
 
-      - name: Enable clangtooling
+      - name: Enable 3rdparty
         shell: bash
         run: |
-          echo "CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/build/llvm" >> $GITHUB_ENV
+          echo "CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/3rdparty" >> $GITHUB_ENV
 
       - name: Build and test
         shell: ctest -VV -S {0}
@@ -80,10 +82,6 @@ jobs:
           if($ENV{GITHUB_EVENT_NAME} STREQUAL schedule)
             set(model Nightly)
           endif()
-
-          set(configure_opts
-            -DCMAKE_TOOLCHAIN_FILE=$ENV{GITHUB_WORKSPACE}/build/release/conan_build/generators/conan_toolchain.cmake
-            )
 
           ctest_start(${model})
           ctest_update()
@@ -109,8 +107,7 @@ jobs:
           endif()
 
           set(configure_opts
-            -DCMAKE_TOOLCHAIN_FILE=$ENV{GITHUB_WORKSPACE}/build/release/conan_build/generators/conan_toolchain.cmake
-            -DCMAKE_CXX_CLANG_TIDY=/usr/bin/clang-tidy
+            -DCMAKE_CXX_CLANG_TIDY=/usr/bin/clang-tidy-20
             )
 
           ctest_start(${model})
@@ -132,7 +129,6 @@ jobs:
 
           find_program(CTEST_COVERAGE_COMMAND NAMES gcov)
           set(configure_opts
-            -DCMAKE_TOOLCHAIN_FILE=$ENV{GITHUB_WORKSPACE}/build/debug/conan_build/generators/conan_toolchain.cmake
             -DCMAKE_CXX_FLAGS_INIT=--coverage
             )
 
@@ -158,7 +154,6 @@ jobs:
           set(CTEST_MEMORYCHECK_TYPE AddressSanitizer)
 
           set(configure_opts
-            -DCMAKE_TOOLCHAIN_FILE=$ENV{GITHUB_WORKSPACE}/build/debug/conan_build/generators/conan_toolchain.cmake
             -DCMAKE_CXX_FLAGS_INIT=-fsanitize=address
             -DCMAKE_EXE_LINKER_FLAGS_INIT=-fsanitize=address
             )

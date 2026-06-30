@@ -12,26 +12,15 @@
 
 namespace target_model
 {
-struct Path_hash
-{
-  using argument_type = std::filesystem::path;
-  using result_type = std::size_t;
-
-  auto operator()(const std::filesystem::path& p) const noexcept -> std::size_t
-  {
-    return std::filesystem::hash_value(p);
-  }
-};
-
 struct Target_data
 {
-  std::unordered_set<std::filesystem::path, Path_hash> interface_headers;
-  std::unordered_set<std::filesystem::path, Path_hash> interface_include_directories;
+  std::unordered_set<std::filesystem::path> interface_headers;
+  std::unordered_set<std::filesystem::path> interface_include_directories;
   std::unordered_set<std::string> interface_include_prefixes;
   std::unordered_set<Target> interface_dependencies;
   std::unordered_set<Target> dependencies;
-  std::unordered_set<std::filesystem::path, Path_hash> sources;
-  std::unordered_set<std::filesystem::path, Path_hash> verify_interface_header_sets_sources;
+  std::unordered_set<std::filesystem::path> sources;
+  std::unordered_set<std::filesystem::path> verify_interface_header_sets_sources;
 };
 
 auto is_interface_header(const Target_data& target_data,
