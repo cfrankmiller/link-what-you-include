@@ -31,14 +31,15 @@ namespace target_model
 {
 namespace
 {
-constexpr std::array<std::pair<std::string_view, size_t>, 7> table{
+constexpr std::array<std::pair<std::string_view, size_t>, 8> table{
   {{"interface_headers", 0},
    {"interface_include_directories", 1},
    {"interface_include_prefixes", 2},
    {"interface_dependencies", 3},
    {"dependencies", 4},
    {"sources", 5},
-   {"verify_interface_header_sets_sources", 6}}};
+   {"headers", 6},
+   {"verify_interface_header_sets_sources", 7}}};
 
 constexpr auto lookup(std::string_view name) -> size_t
 {
@@ -204,6 +205,7 @@ auto Target_model_loader_impl::load_json(const std::filesystem::path& path)
     auto& interface_dependencies = raw_data[lookup("interface_dependencies")];
     auto& dependencies = raw_data[lookup("dependencies")];
     auto& sources = raw_data[lookup("sources")];
+    auto& headers = raw_data[lookup("headers")];
     auto& verify_interface_header_sets_sources =
       raw_data[lookup("verify_interface_header_sets_sources")];
 
@@ -224,6 +226,7 @@ auto Target_model_loader_impl::load_json(const std::filesystem::path& path)
     }
 
     target_data.sources.insert(sources.begin(), sources.end());
+    target_data.headers.insert(headers.begin(), headers.end());
     target_data.verify_interface_header_sets_sources.insert(
       verify_interface_header_sets_sources.begin(),
       verify_interface_header_sets_sources.end());
