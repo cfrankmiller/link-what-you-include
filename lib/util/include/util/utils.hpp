@@ -7,6 +7,6 @@
 
 namespace util
 {
-auto is_in_directory(const std::filesystem::path& dir, const std::filesystem::path& file)
+auto is_in_directory(std::filesystem::path dir, const std::filesystem::path& file)
   -> bool;
 }
