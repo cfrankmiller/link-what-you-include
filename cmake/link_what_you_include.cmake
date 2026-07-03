@@ -86,14 +86,26 @@ function(lwyi__write_json)
       set(sources $<PATH:CMAKE_PATH,NORMALIZE,${absolute_sources}>)
     endif()
 
+    # headers
+    get_target_property(header_sets ${target} HEADER_SETS)
+    set(headers)
+    if(header_sets)
+      foreach(set ${header_sets})
+        get_target_property(files ${target} HEADER_SET_${set})
+        if(files)
+          list(APPEND headers $<PATH:CMAKE_PATH,NORMALIZE,${files}>)
+        endif()
+      endforeach()
+    endif()
+
     # interface_headers
     get_target_property(interface_header_sets ${target} INTERFACE_HEADER_SETS)
     set(interface_headers)
     if(interface_header_sets)
       foreach(set ${interface_header_sets})
-        get_target_property(headers ${target} HEADER_SET_${set})
-        if(headers)
-          list(APPEND interface_headers $<PATH:CMAKE_PATH,NORMALIZE,${headers}>)
+        get_target_property(files ${target} HEADER_SET_${set})
+        if(files)
+          list(APPEND interface_headers $<PATH:CMAKE_PATH,NORMALIZE,${files}>)
         endif()
       endforeach()
     endif()
@@ -130,6 +142,7 @@ function(lwyi__write_json)
     lwyi__list_to_array_element("interface_dependencies" ${target} interface_dependencies)
     lwyi__list_to_array_element("dependencies" ${target} dependencies)
     lwyi__list_to_array_element("sources" ${target} sources)
+    lwyi__list_to_array_element("headers" ${target} headers)
     lwyi__list_to_array_element("verify_interface_header_sets_sources" ${target} verify_interface_header_sets_sources)
 
     string(
@@ -142,6 +155,7 @@ function(lwyi__write_json)
       ${interface_dependencies}
       ${dependencies}
       ${sources}
+      ${headers}
       ${verify_interface_header_sets_sources}
       )
 

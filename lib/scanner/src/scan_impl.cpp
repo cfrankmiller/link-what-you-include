@@ -72,6 +72,7 @@ class PPRecorder : public clang::PPCallbacks
   Include_data& include_data_;
   const target_model::Target_data& target_data_;
 
+  clang::FileID initial_fid_;
   Source_line last_include_loc_;
   std::vector<Source_line> include_chain_;
   std::filesystem::path current_source_file_;
@@ -118,6 +119,11 @@ public:
 
     assert(fid.isValid());
 
+    if (initial_fid_.isInvalid())
+    {
+      initial_fid_ = fid;
+    }
+
     current_source_file_ = to_normal_path(
       preprocessor_.getSourceManager().getSLocEntry(fid).getFile().getName().str());
 
@@ -128,7 +134,7 @@ public:
     const auto previous_context = context_;
     const auto previous_include_set = current_include_set_;
 
-    if (target_model::is_interface_header(target_data_, current_source_file_))
+    if (fid != initial_fid_ && target_model::is_interface_header(target_data_, current_source_file_))
     {
       log("Context interface header\n");
       context_ = Context::interface_header;

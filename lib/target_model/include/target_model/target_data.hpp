@@ -20,6 +20,7 @@ struct Target_data
   std::unordered_set<Target> interface_dependencies;
   std::unordered_set<Target> dependencies;
   std::unordered_set<std::filesystem::path> sources;
+  std::unordered_set<std::filesystem::path> headers;
   std::unordered_set<std::filesystem::path> verify_interface_header_sets_sources;
 };
 

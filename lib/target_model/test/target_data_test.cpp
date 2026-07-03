@@ -50,4 +50,16 @@ TEST_CASE("target_model: free functions", "[target_model]")
     CHECK(target_model::is_private_source(target_data, "/liba/src/b.cpp"));
     CHECK(!target_model::is_private_source(target_data, "/liba/src/c.cpp"));
   }
+  SECTION("explicit private headers")
+  {
+    target_data.headers.insert("/liba/src/a.hpp");
+    CHECK(target_model::is_private_source(target_data, "/liba/src/a.hpp"));
+    CHECK(!target_model::is_private_source(target_data, "/liba/src/b.hpp"));
+  }
+  SECTION("explicit private headers as sources")
+  {
+    target_data.sources.insert("/liba/src/a.hpp");
+    CHECK(target_model::is_private_source(target_data, "/liba/src/a.hpp"));
+    CHECK(!target_model::is_private_source(target_data, "/liba/src/b.hpp"));
+  }
 }

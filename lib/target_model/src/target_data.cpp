@@ -12,8 +12,7 @@ namespace target_model
 auto is_interface_header(const Target_data& target_data,
                          const std::filesystem::path& filename) -> bool
 {
-  if (auto it = target_data.interface_headers.find(filename);
-      it != target_data.interface_headers.end())
+  if (target_data.interface_headers.contains(filename))
   {
     return true;
   }
@@ -45,7 +44,6 @@ auto is_interface_header(const Target_data& target_data,
 auto is_private_source(const Target_data& target_data,
                        const std::filesystem::path& filename) -> bool
 {
-  auto it = target_data.sources.find(filename);
-  return it != target_data.sources.end();
+  return target_data.sources.contains(filename) || target_data.headers.contains(filename);
 }
 } // namespace target_model
