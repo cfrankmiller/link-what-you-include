@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <format>
 #include <numeric>
+#include <optional>
 #include <print>
 #include <string>
 #include <string_view>
@@ -329,5 +330,101 @@ TEST_CASE("util: arg_parser given a terminal arg", "[util]")
 
     std::vector<std::string_view> expected{"one", "two", "-b", "three"};
     CHECK(result.value().d == expected);
+  }
+}
+
+TEST_CASE("util: arg_parser given an optional<string>", "[util]")
+{
+  struct Options
+  {
+    bool a{false};
+    std::optional<std::string> b;
+    uint32_t c{0U};
+  };
+
+  constexpr auto parser = util::arg_parser<Options>() //
+                            .arg("-a", "--aaa", &Options::a)
+                            .arg("-b", "--bbb", &Options::b)
+                            .arg("-c", "--ccc", &Options::c);
+
+  SECTION("optional arg not passed")
+  {
+    std::vector<const char*> args{"-a", "-c42"};
+    INFO(to_string(args));
+    auto result = parser.parse(args.begin(), args.end());
+
+    if (!result.has_value())
+    {
+      std::print("!!! {}\n", result.error());
+    }
+
+    REQUIRE(result.has_value());
+    CHECK(result.value().a == true);
+    CHECK(result.value().b == std::nullopt);
+    CHECK(result.value().c == 42);
+  }
+  SECTION("optional arg without value")
+  {
+    std::vector<const char*> args{"-a", "-b", "-c42"};
+    INFO(to_string(args));
+    auto result = parser.parse(args.begin(), args.end());
+
+    if (!result.has_value())
+    {
+      std::print("!!! {}\n", result.error());
+    }
+
+    REQUIRE(result.has_value());
+    CHECK(result.value().a == true);
+    CHECK(result.value().b == "");
+    CHECK(result.value().c == 42);
+  }
+  SECTION("optional arg without value at end")
+  {
+    std::vector<const char*> args{"-a", "-c42", "-b"};
+    INFO(to_string(args));
+    auto result = parser.parse(args.begin(), args.end());
+
+    if (!result.has_value())
+    {
+      std::print("!!! {}\n", result.error());
+    }
+
+    REQUIRE(result.has_value());
+    CHECK(result.value().a == true);
+    CHECK(result.value().b == "");
+    CHECK(result.value().c == 42);
+  }
+  SECTION("optional arg with a value")
+  {
+    std::vector<const char*> args{"-a", "-b", "yep", "-c42"};
+    INFO(to_string(args));
+    auto result = parser.parse(args.begin(), args.end());
+
+    if (!result.has_value())
+    {
+      std::print("!!! {}\n", result.error());
+    }
+
+    REQUIRE(result.has_value());
+    CHECK(result.value().a == true);
+    CHECK(result.value().b == "yep");
+    CHECK(result.value().c == 42);
+  }
+  SECTION("optional arg with a value at end")
+  {
+    std::vector<const char*> args{"-a", "-c42", "-b", "yep"};
+    INFO(to_string(args));
+    auto result = parser.parse(args.begin(), args.end());
+
+    if (!result.has_value())
+    {
+      std::print("!!! {}\n", result.error());
+    }
+
+    REQUIRE(result.has_value());
+    CHECK(result.value().a == true);
+    CHECK(result.value().b == "yep");
+    CHECK(result.value().c == 42);
   }
 }

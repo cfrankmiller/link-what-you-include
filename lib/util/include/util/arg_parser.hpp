@@ -10,6 +10,7 @@
 #include <expected>
 #include <format>
 #include <iterator>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -138,6 +139,29 @@ private:
           return begin;
         }
         options.*value = true;
+        return ++begin;
+      }
+      else if constexpr (std::is_same_v<U, std::optional<std::string> Toptions::*>)
+      {
+        if (arg_tail.empty())
+        {
+          ++begin;
+          if (begin == end)
+          {
+            options.*value = std::string{};
+            return begin;
+          }
+        }
+
+        const auto param = arg_tail.empty() ? std::string_view(*begin) : arg_tail;
+        assert(!param.empty());
+        if (param[0] == '-')
+        {
+          options.*value = std::string{};
+          return begin;
+        }
+
+        options.*value = param;
         return ++begin;
       }
       else
