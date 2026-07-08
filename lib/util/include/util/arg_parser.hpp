@@ -118,17 +118,34 @@ private:
   {
     assert(begin != end);
 
-    std::string_view arg{*begin};
+    const std::string_view arg{*begin};
     if (arg.empty())
     {
       error_string = "expect non-empty args";
       return begin;
     }
 
-    const bool can_omit_space = 1 < arg.size() && arg[0] == '-' && arg[1] != '-';
-    const auto arg_head = can_omit_space ? arg.substr(0, std::min(arg.size(), name.size()))
-                                         : arg;
-    const auto arg_tail = arg.substr(arg_head.size());
+    const auto [arg_head, arg_tail] = [&]() -> std::pair<std::string_view, std::string_view>
+    {
+      if (1 < arg.size() && arg[0] == '-')
+      {
+        if (arg[1] != '-')
+        {
+          return {arg.substr(0, 2), arg.substr(2)};
+        }
+
+        if (arg[1] == '-')
+        {
+          if (const auto pos = arg.find_first_of('='); pos != std::string_view::npos)
+          {
+            return {arg.substr(0, pos), arg.substr(pos + 1)};
+          }
+        }
+      }
+
+      return {arg, {}};
+    }();
+
     if (arg_head == name)
     {
       if constexpr (std::is_same_v<U, bool Toptions::*>)

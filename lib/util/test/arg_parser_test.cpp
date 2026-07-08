@@ -152,6 +152,28 @@ TEST_CASE("util: arg_parser", "[util]")
 
     REQUIRE(!result.has_value());
   }
+  SECTION("short parameter =")
+  {
+    std::vector<const char*> args{"-c=hello"};
+    INFO(to_string(args));
+    auto result = parser.parse(args.begin(), args.end());
+
+    REQUIRE(result.has_value());
+    CHECK(result.value().a == false);
+    CHECK(result.value().b == false);
+    CHECK(result.value().c == "=hello"); // intentional behavior
+  }
+  SECTION("long parameter =")
+  {
+    std::vector<const char*> args{"--ccc=hello"};
+    INFO(to_string(args));
+    auto result = parser.parse(args.begin(), args.end());
+
+    REQUIRE(result.has_value());
+    CHECK(result.value().a == false);
+    CHECK(result.value().b == false);
+    CHECK(result.value().c == "hello");
+  }
   SECTION("missing short parameter")
   {
     std::vector<const char*> args{"-c", "-a"};
@@ -426,5 +448,35 @@ TEST_CASE("util: arg_parser given an optional<string>", "[util]")
     CHECK(result.value().a == true);
     CHECK(result.value().b == "yep");
     CHECK(result.value().c == 42);
+  }
+  SECTION("optional arg with a value using =")
+  {
+    std::vector<const char*> args{"--bbb=yep", "-a"};
+    INFO(to_string(args));
+    auto result = parser.parse(args.begin(), args.end());
+
+    if (!result.has_value())
+    {
+      std::print("!!! {}\n", result.error());
+    }
+
+    REQUIRE(result.has_value());
+    CHECK(result.value().a == true);
+    CHECK(result.value().b == "yep");
+  }
+  SECTION("optional arg without value using =")
+  {
+    std::vector<const char*> args{"--bbb=", "-a"};
+    INFO(to_string(args));
+    auto result = parser.parse(args.begin(), args.end());
+
+    if (!result.has_value())
+    {
+      std::print("!!! {}\n", result.error());
+    }
+
+    REQUIRE(result.has_value());
+    CHECK(result.value().a == true);
+    CHECK(result.value().b == "");
   }
 }
