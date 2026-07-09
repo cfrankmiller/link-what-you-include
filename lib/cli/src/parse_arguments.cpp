@@ -9,9 +9,11 @@
 
 #include <cassert>
 #include <cstdint>
+#include <cstdlib>
 #include <expected>
 #include <format>
 #include <iterator>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -21,10 +23,31 @@ namespace cli
 {
 namespace
 {
+constexpr std::string_view usage_string = R"(Usage:
+  {0} [options]
+
+Possible options:
+  -h, --help                Print this help message.
+  --color [WHEN]            Enable colored output. WHEN is 'never', 'always', or
+                            'auto'. Plain --color means --color auto.
+                            Default is --color auto.
+  -v, --verbose             Show verbose output.
+  --debug                   Show internal debug output.
+
+  -d, --binary_dir DIR      Path to the directory with input files. Default is
+                            the current directory.
+  -t, --targets TARGETS...  Limit analysis to the given targets.
+  -j, --parallel COUNT      Number of threads used to process source files.
+                            Default depends on system.
+
+  --tool TOOL [OPTIONS...]  Run a tool. All subsequent arguments are passed to
+                            the tool. This is undocumented and serves as a place
+                            holder for future features.)";
+
 struct Options
 {
   bool help{false};
-  bool color_output{false};
+  std::optional<std::string> color_output;
   bool verbose{false};
   bool debug{false};
   std::string_view binary_dir;
@@ -46,23 +69,7 @@ constexpr auto parser = util::arg_parser<Options>()
 
 std::string usage(std::string_view name)
 {
-  return std::format(
-    "Usage:\n"
-    "  {} [options]\n\n"
-    "Possible options:\n"
-    "  -h, --help                Print this help message.\n"
-    "  --color                   Enable colored terminal output.\n"
-    "  -v, --verbose             Show verbose output.\n"
-    "  --debug                   Show internal debug output.\n\n"
-    "  -d, --binary_dir DIR      Path to the directory with input files. Default is\n"
-    "                            the current directory.\n"
-    "  -t, --targets TARGETS...  Limit analysis to the given targets.\n"
-    "  -j, --parallel COUNT      Number of threads used to process source files.\n"
-    "                            Default depends on system.\n\n"
-    "  --tool TOOL [OPTIONS...]  Run a tool. All subsequent arguments are passed to\n"
-    "                            the tool. This is undocumented and serves as a place\n"
-    "                            holder for future features.",
-    name);
+  return std::format(usage_string, name);
 }
 
 message::Message_level get_message_level(const Options& options)
@@ -77,6 +84,12 @@ message::Message_level get_message_level(const Options& options)
   }
 
   return message::Message_level::normal;
+}
+
+bool is_set_in_environment(const char* env_var)
+{
+  auto* v = std::getenv(env_var);
+  return v && std::string_view(v) != "0";
 }
 } // namespace
 
@@ -99,10 +112,43 @@ std::expected<Command_options, std::string> parse_arguments(int argc, const char
   }
 
   auto& options = result.value();
+
+  // The default color is automatic unless the NO_COLOR environment variable is set
+  auto color_output = is_set_in_environment("NO_COLOR") ? message::Color_output::never
+                                                        : message::Color_output::automatic;
+
+  // The command line option overrides the default color
+  if (options.color_output.has_value())
+  {
+    if (*options.color_output == "auto" || options.color_output->empty())
+    {
+      color_output = message::Color_output::automatic;
+    }
+    else if (*options.color_output == "always")
+    {
+      color_output = message::Color_output::always;
+    }
+    else if (*options.color_output == "never")
+    {
+      color_output = message::Color_output::never;
+    }
+    else
+    {
+      return std::unexpected(
+        std::format("invalid color {}\n{}\n", *options.color_output, usage(name)));
+    }
+  }
+
+  // The FORCE_COLOR environment variable overrides everything
+  if (is_set_in_environment("FORCE_COLOR"))
+  {
+    color_output = message::Color_output::always;
+  }
+
   return Command_options{options.binary_dir,
                          std::move(options.targets),
                          std::move(options.tool_command),
-                         options.color_output,
+                         color_output,
                          get_message_level(options),
                          options.num_threads};
 }

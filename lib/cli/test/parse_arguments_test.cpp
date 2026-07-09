@@ -8,11 +8,59 @@
 
 #include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/interfaces/catch_interfaces_reporter.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
 
+#include <cassert>
+#include <cstdint>
 #include <format>
 #include <numeric>
 #include <string_view>
 #include <vector>
+
+// This is different than <cstdlib>. Needed for unsetenv.
+#include <stdlib.h> // NOLINT(modernize-deprecated-headers)
+
+namespace
+{
+void unset_env(const char* var)
+{
+  [[maybe_unused]] auto ret =
+#ifdef _WIN32
+    _putenv_s(var, "");
+#else
+    unsetenv(var);
+#endif
+  assert(ret == 0);
+}
+
+void set_env(const char* var, const char* value)
+{
+  [[maybe_unused]] auto ret =
+#ifdef _WIN32
+    _putenv_s(var, value);
+#else
+    setenv(var, value, 1);
+#endif
+  assert(ret == 0);
+}
+
+// Ensure that the environment variables that affect command line parsing are unset at the start of each run through a
+// test case.
+class testRunListener : public Catch::EventListenerBase
+{
+public:
+  using Catch::EventListenerBase::EventListenerBase;
+  void testCasePartialStarting(const Catch::TestCaseInfo&, uint64_t) override
+  {
+    unset_env("NO_COLOR");
+    unset_env("FORCE_COLOR");
+  }
+};
+} // namespace
+
+CATCH_REGISTER_LISTENER(testRunListener)
 
 auto to_string(std::vector<const char*> args)
 {
@@ -94,20 +142,254 @@ TEST_CASE("cli: parse_arguments for tool", "[lwyi]")
   CHECK(options.tool_command == expected);
 }
 
-TEST_CASE("cli: parse_arguments for color", "[lwyi]")
+TEST_CASE("cli: parse_arguments when no --color", "[lwyi]")
+{
+  std::vector<const char*> args{"exe_name", "-d", "some/dir"};
+  INFO(to_string(args));
+
+  const auto argc = static_cast<int>(args.size());
+  const auto argv = args.data();
+
+  SECTION("Empty environment")
+  {
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::automatic);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("NO_COLOR environment")
+  {
+    set_env("NO_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::never);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("FORCE_COLOR environment")
+  {
+    set_env("FORCE_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::always);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("NO_COLOR and FORCE_COLOR environment")
+  {
+    set_env("NO_COLOR", "1");
+    set_env("FORCE_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::always);
+    CHECK(options.binary_dir == "some/dir");
+  }
+}
+
+TEST_CASE("cli: parse_arguments when --color", "[lwyi]")
 {
   std::vector<const char*> args{"exe_name", "--color", "-d", "some/dir"};
   INFO(to_string(args));
 
   const auto argc = static_cast<int>(args.size());
   const auto argv = args.data();
-  auto result = cli::parse_arguments(argc, argv);
-  REQUIRE(result.has_value());
 
-  const auto& options = result.value();
-  CHECK(options.color_output);
-  CHECK(options.message_level == message::Message_level::normal);
-  CHECK(options.binary_dir == "some/dir");
+  SECTION("Empty environment")
+  {
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::automatic);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("NO_COLOR environment")
+  {
+    set_env("NO_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::automatic);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("FORCE_COLOR environment")
+  {
+    set_env("FORCE_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::always);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("NO_COLOR and FORCE_COLOR environment")
+  {
+    set_env("NO_COLOR", "1");
+    set_env("FORCE_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::always);
+    CHECK(options.binary_dir == "some/dir");
+  }
+}
+
+TEST_CASE("cli: parse_arguments when --color auto", "[lwyi]")
+{
+  std::vector<const char*> args{"exe_name", "--color", "auto", "-d", "some/dir"};
+  INFO(to_string(args));
+
+  const auto argc = static_cast<int>(args.size());
+  const auto argv = args.data();
+
+  SECTION("Empty environment")
+  {
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::automatic);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("NO_COLOR environment")
+  {
+    set_env("NO_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::automatic);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("FORCE_COLOR environment")
+  {
+    set_env("FORCE_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::always);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("NO_COLOR and FORCE_COLOR environment")
+  {
+    set_env("NO_COLOR", "1");
+    set_env("FORCE_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::always);
+    CHECK(options.binary_dir == "some/dir");
+  }
+}
+
+TEST_CASE("cli: parse_arguments when color never", "[lwyi]")
+{
+  std::vector<const char*> args{"exe_name", "--color", "never", "-d", "some/dir"};
+  INFO(to_string(args));
+
+  const auto argc = static_cast<int>(args.size());
+  const auto argv = args.data();
+
+  SECTION("Empty environment")
+  {
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::never);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("NO_COLOR environment")
+  {
+    set_env("NO_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::never);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("FORCE_COLOR environment")
+  {
+    set_env("FORCE_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::always);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("NO_COLOR and FORCE_COLOR environment")
+  {
+    set_env("NO_COLOR", "1");
+    set_env("FORCE_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::always);
+    CHECK(options.binary_dir == "some/dir");
+  }
+}
+
+TEST_CASE("cli: parse_arguments when color always", "[lwyi]")
+{
+  std::vector<const char*> args{"exe_name", "--color", "always", "-d", "some/dir"};
+  INFO(to_string(args));
+
+  const auto argc = static_cast<int>(args.size());
+  const auto argv = args.data();
+
+  SECTION("Empty environment")
+  {
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::always);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("NO_COLOR environment")
+  {
+    set_env("NO_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::always);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("FORCE_COLOR environment")
+  {
+    set_env("FORCE_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::always);
+    CHECK(options.binary_dir == "some/dir");
+  }
+  SECTION("NO_COLOR and FORCE_COLOR environment")
+  {
+    set_env("NO_COLOR", "1");
+    set_env("FORCE_COLOR", "1");
+    auto result = cli::parse_arguments(argc, argv);
+    REQUIRE(result.has_value());
+
+    const auto& options = result.value();
+    CHECK(options.color_output == message::Color_output::always);
+    CHECK(options.binary_dir == "some/dir");
+  }
 }
 
 TEST_CASE("cli: parse_arguments for verbose", "[lwyi]")

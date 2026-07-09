@@ -9,12 +9,20 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#else
+#include <unistd.h>
 #endif
 
 namespace message
 {
 namespace
 {
+struct Output_options
+{
+  bool color{false};
+  Message_level message_level{Message_level::normal};
+};
+
 Output_options g_options{}; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
 #ifdef _WIN32
@@ -38,14 +46,18 @@ bool enable_virtual_terminal_processing(HANDLE handle)
 
   return SetConsoleMode(handle, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
 }
-
-bool enable_windows_color()
-{
-  const auto stdout_ok = enable_virtual_terminal_processing(GetStdHandle(STD_OUTPUT_HANDLE));
-  const auto stderr_ok = enable_virtual_terminal_processing(GetStdHandle(STD_ERROR_HANDLE));
-  return stdout_ok || stderr_ok;
-}
 #endif
+
+bool is_smart_terminal()
+{
+  // TODO: we currently only need a smart terminal on STDOUT. If that changes, also check
+  //       STD_ERROR_HANDLE/STDERR_FILENO.
+#ifdef _WIN32
+  return enable_virtual_terminal_processing(GetStdHandle(STD_OUTPUT_HANDLE));
+#else
+  return isatty(STDOUT_FILENO);
+#endif
+}
 
 Message_level message_level()
 {
@@ -53,16 +65,28 @@ Message_level message_level()
 }
 } // namespace
 
-void configure(Output_options options)
+void configure(Color_output color, Message_level message_level)
 {
-#ifdef _WIN32
-  if (options.color && !enable_windows_color())
+  switch (color)
   {
-    options.color = false;
+    case Color_output::never:
+    {
+      g_options.color = false;
+      break;
+    }
+    case Color_output::always:
+    {
+      g_options.color = true;
+      break;
+    }
+    case Color_output::automatic:
+    {
+      g_options.color = is_smart_terminal();
+      break;
+    }
   }
-#endif
 
-  g_options = options;
+  g_options.message_level = message_level;
 }
 
 std::string paint(std::string_view text, Style style)
