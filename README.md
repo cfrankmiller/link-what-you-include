@@ -57,10 +57,12 @@ A compiler with support for the C++23 standard is required. The following are kn
 The following dependencies must be available:
 
 - [catch2](https://github.com/catchorg/Catch2). Only needed if BUILD_TESTING is
-  enabled. Version 3.15.1 is known to work.
+  enabled. Versions 3.7 and greater are expected to work.
 - [clang](https://github.com/llvm/llvm-project/releases/tag/llvmorg-18.1.8).
-  Only the tooling libraries are needed. Must be version 18. Version 18.1.8 is known to work.
-- [simdjson](https://github.com/simdjson/simdjson). Version 4.6.4 is known to work.
+  Only the tooling libraries are needed. Must be version 18. Version 18.1.8 is
+  known to work.
+- [simdjson](https://github.com/simdjson/simdjson). Versions 3.6 and greater
+  are expected to work.
 
 <details>
 <summary>Provision dependencies on Ubuntu 26.04</summary>

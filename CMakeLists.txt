@@ -65,10 +65,17 @@ else()
   target_compile_options(clangTooling INTERFACE -fno-rtti)
 endif()
 
-find_package(simdjson 4.6 REQUIRED)
+# The config-file package provided by upstream simdjson does not support version ranges as expected.
+# For example, if we pass 4.2 to this find_package call, CMake will find version 4.6 but claim that
+# it is incompatible.
+# TODO: Revisit
+find_package(simdjson REQUIRED)
+if(simdjson_VERSION VERSION_LESS "3.6")
+  message(FATAL_ERROR "simdjson version 3.6 or greater is required. Found: ${simdjson_VERSION}")
+endif()
 
 if(BUILD_TESTING)
-  find_package(Catch2 3.15 REQUIRED)
+  find_package(Catch2 3.7 REQUIRED)
   include(Catch)
 endif()
 
