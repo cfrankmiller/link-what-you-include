@@ -65,10 +65,10 @@ else()
   target_compile_options(clangTooling INTERFACE -fno-rtti)
 endif()
 
-find_package(simdjson 4.6 REQUIRED)
+find_package(simdjson REQUIRED)
 
 if(BUILD_TESTING)
-  find_package(Catch2 3.15 REQUIRED)
+  find_package(Catch2 3.7 REQUIRED)
   include(Catch)
 endif()
 
