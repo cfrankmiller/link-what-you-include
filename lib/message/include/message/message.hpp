@@ -10,6 +10,13 @@
 
 namespace message
 {
+enum class Color_output : uint8_t
+{
+  never,
+  always,
+  automatic,
+};
+
 enum class Message_level : uint8_t
 {
   normal,
@@ -27,13 +34,7 @@ enum class Style
   note,
 };
 
-struct Output_options
-{
-  bool color{false};
-  Message_level message_level{Message_level::normal};
-};
-
-void configure(Output_options options);
+void configure(Color_output color, Message_level message_level);
 void print(std::string_view text, Style style = Style::plain);
 void blank_line();
 void heading(std::string_view text);

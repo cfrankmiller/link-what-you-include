@@ -19,7 +19,7 @@ int main(int argc, const char* argv[])
   auto options = cli::parse_arguments(argc, argv);
   if (options.has_value())
   {
-    message::configure({options->color_output, options->message_level});
+    message::configure(options->color_output, options->message_level);
     return run_lwyi(*options).or_else(print_error).value_or(1);
   }
 

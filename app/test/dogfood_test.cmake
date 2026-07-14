@@ -42,7 +42,7 @@ elseif(LWYI_EXPECT_MESSAGE_LEVEL STREQUAL "verbose")
   list(INSERT command_args 1 --verbose)
 endif()
 if(LWYI_EXPECT_COLOR)
-  list(INSERT command_args 1 --color)
+  list(INSERT command_args 1 --color=always)
 endif()
 
 execute_process(

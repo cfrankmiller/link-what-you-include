@@ -16,7 +16,7 @@ struct Command_options
   std::string_view binary_dir;
   std::vector<std::string_view> targets;
   std::vector<std::string_view> tool_command;
-  bool color_output;
+  message::Color_output color_output;
   message::Message_level message_level;
   uint32_t num_threads;
 };
