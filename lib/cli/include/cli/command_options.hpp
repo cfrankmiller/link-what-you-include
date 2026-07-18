@@ -4,6 +4,7 @@
 #pragma once
 
 #include <message/message.hpp>
+#include <lwyi/mode.hpp>
 
 #include <cstdint>
 #include <string_view>
@@ -19,5 +20,6 @@ struct Command_options
   message::Color_output color_output;
   message::Message_level message_level;
   uint32_t num_threads;
+  lwyi::Mode mode;
 };
 } // namespace cli

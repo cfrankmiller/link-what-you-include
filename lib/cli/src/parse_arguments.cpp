@@ -40,6 +40,9 @@ Possible options:
   -j, --parallel COUNT      Number of threads used to process source files.
                             Default depends on system.
 
+  --permissive              Allow linking with PUBLIC scope when only INTERFACE
+                            scope is required.
+
   --tool TOOL [OPTIONS...]  Run a tool. All subsequent arguments are passed to
                             the tool. This is undocumented and serves as a place
                             holder for future features.)";
@@ -53,7 +56,7 @@ struct Options
   std::string_view binary_dir;
   uint32_t num_threads{0};
   std::vector<std::string_view> targets;
-  std::vector<std::string_view> sources;
+  bool permissive{false};
   std::vector<std::string_view> tool_command;
 };
 
@@ -65,6 +68,7 @@ constexpr auto parser = util::arg_parser<Options>()
                           .arg("-d", "--binary_dir", &Options::binary_dir)
                           .arg("-t", "--targets", &Options::targets)
                           .arg("-j", "--parallel", &Options::num_threads)
+                          .arg("--permissive", &Options::permissive)
                           .terminal_arg("--tool", &Options::tool_command);
 
 std::string usage(std::string_view name)
@@ -145,11 +149,14 @@ std::expected<Command_options, std::string> parse_arguments(int argc, const char
     color_output = message::Color_output::always;
   }
 
+  const lwyi::Mode mode = options.permissive ? lwyi::Mode::Permissive : lwyi::Mode::Strict;
+
   return Command_options{options.binary_dir,
                          std::move(options.targets),
                          std::move(options.tool_command),
                          color_output,
                          get_message_level(options),
-                         options.num_threads};
+                         options.num_threads,
+                         mode};
 }
 } // namespace cli

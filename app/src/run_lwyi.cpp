@@ -91,8 +91,12 @@ std::expected<int, std::string> run_lwyi(const cli::Command_options& options)
 
         message::heading("Target: {}", target.name);
 
-        success &=
-          run_lwyi_on_target(target_model, binary_dir, target, target_data, num_threads);
+        success &= run_lwyi_on_target(target_model,
+                                      binary_dir,
+                                      target,
+                                      target_data,
+                                      num_threads,
+                                      options.mode);
       });
   }
   else
@@ -115,8 +119,12 @@ std::expected<int, std::string> run_lwyi(const cli::Command_options& options)
         break;
       }
 
-      success &=
-        run_lwyi_on_target(target_model, binary_dir, target, *otarget_data, num_threads);
+      success &= run_lwyi_on_target(target_model,
+                                    binary_dir,
+                                    target,
+                                    *otarget_data,
+                                    num_threads,
+                                    options.mode);
     }
   }
 

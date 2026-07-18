@@ -61,7 +61,8 @@ bool run_lwyi_on_target(const target_model::Target_model& target_model,
                         const std::filesystem::path& binary_dir,
                         const target_model::Target& target,
                         const target_model::Target_data& target_data,
-                        unsigned int num_threads)
+                        unsigned int num_threads,
+                        lwyi::Mode mode)
 {
   static scanner::Scanner scanner(num_threads);
   if (target_data.sources.empty() && target_data.verify_interface_header_sets_sources.empty())
@@ -78,23 +79,7 @@ bool run_lwyi_on_target(const target_model::Target_model& target_model,
     return false;
   }
 
-  auto errors = lwyi::check_target(target_model, target, target_data, *eincludes);
-
-  // TODO: consider enabling the following with a command line option
-#if 0
-  // special case: ignore linked PUBLIC but included INTERFACE errors
-  errors.erase(std::remove_if(errors.begin(),
-                              errors.end(),
-                              [](const lwyi::LWYI_error& error)
-                              {
-                                return error.linked_visibility ==
-                                         lwyi::Dependency_visibility::public_scope &&
-                                       error.included_visibility ==
-                                         lwyi::Dependency_visibility::interface_scope;
-                              }),
-               errors.end());
-#endif
-
+  auto errors = lwyi::check_target(target_model, target, target_data, *eincludes, mode);
   if (errors.empty())
   {
     message::status("ok",

@@ -12,6 +12,7 @@ target_sources(lib_cli
 target_link_libraries(lib_cli
   PUBLIC
     lib_message
+    lib_lwyi
   PRIVATE
     lib_util
   )
