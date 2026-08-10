@@ -108,7 +108,7 @@ if(ENABLE_DOGFOODING)
   target_sources(Catch2::Catch2WithMain
     INTERFACE
     FILE_SET HEADERS
-    BASE_DIRS ${catch_include}/catch2
+    BASE_DIRS ${catch_include}
   )
   set_target_properties(Catch2::Catch2WithMain PROPERTIES SYSTEM TRUE)
 endif()

@@ -55,6 +55,11 @@ std::expected<int, std::string> run_lwyi(const cli::Command_options& options)
   const auto config_path = options.config_file.empty() ? (binary_dir / "lwyi-config.json")
                                                        : std::filesystem::path(options.config_file);
   std::optional<lwyi::Config> config;
+  if (!options.config_file.empty() && !std::filesystem::is_regular_file(config_path))
+  {
+    return std::unexpected(
+      std::format("error: config file not found: {}", config_path.string()));
+  }
   if (std::filesystem::is_regular_file(config_path))
   {
     message::info("Loading config from {}", config_path.string());

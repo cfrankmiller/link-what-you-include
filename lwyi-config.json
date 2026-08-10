@@ -1,2 +1,9 @@
 {
+ "targets": {
+   "Catch2::Catch2WithMain": {
+     "interface_include_prefixes": [
+       "catch2"
+     ]
+   }
+ }
 }
