@@ -79,8 +79,6 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           cat << EOF >> $GITHUB_ENV
-          CXX=/usr/bin/g++-14
-          CC=/usr/bin/gcc-14
           EOF
 
       - name: Setup macos environment

@@ -2,16 +2,28 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <src/load_config_impl.hpp>
-
 #include <target_model/target.hpp>
 
 #include <catch2/catch_test_macros.hpp>
-
 #include <simdjson.h>
 
 #include <cstring>
+#include <flat_set>
+#include <flat_map>
 #include <set>
 #include <string>
+
+TEST_CASE("play: can we use flat_set and flat_map?")
+{
+  std::vector<int>         vi{3, 2, 5, 7, 8, 1, 4, 2, 5, 9, 0};
+  std::vector<std::string> vs{"3", "2", "5", "7", "8", "1", "4", "2", "5", "9", "0"};
+  std::flat_set<int> s(vi);
+  CHECK(s.contains(2));
+
+  std::flat_map<int,std::string> m(vi, vs);
+  CHECK(m.contains(2));
+  CHECK(m[5] == "5");
+}
 
 TEST_CASE("lwyi: load_config loads target overrides", "[lwyi]")
 {
