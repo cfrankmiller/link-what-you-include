@@ -22,8 +22,6 @@ class Target_model
 public:
   explicit Target_model(std::vector<std::pair<Target, Target_data>> target_to_target_data);
 
-  std::string validate() const;
-
   std::optional<std::reference_wrapper<const Target_data>> get_target_data(
     const Target& target) const;
 

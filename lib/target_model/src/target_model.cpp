@@ -98,65 +98,6 @@ Target_model::Target_model(std::vector<std::pair<Target, Target_data>> target_to
   }
 }
 
-std::string Target_model::validate() const
-{
-  // look for duplicate targets
-  if (auto it = std::ranges::adjacent_find(target_to_target_data_, Comp{});
-      it != target_to_target_data_.end())
-  {
-    return std::format("Target {} is repeated.\n", it->first.name);
-  }
-
-  // check directory_to_target
-  // - a directory of one target, cannot be a subdirectory of another.
-
-  for (const auto& pair : directory_to_target_)
-  {
-    const auto& directory = pair.first;
-    const auto& target = pair.second->first;
-
-    for (const auto& other_pair : directory_to_target_)
-    {
-      const auto& other_target = other_pair.second->first;
-      if (target == other_target)
-      {
-        continue;
-      }
-      const auto& other_directory = other_pair.first;
-      if (util::is_in_directory(directory, other_directory))
-      {
-        const auto& target_data = pair.second->second;
-        const auto& other_target_data = other_pair.second->second;
-
-        if (target_data.interface_include_prefixes.empty())
-        {
-          return std::format(
-            "{} and {} have a conflicting include directory ({}) and {} does not have an include prefix to disambiguate.\n",
-            target.name,
-            other_target.name,
-            directory.string(),
-            target.name);
-        }
-
-        for (const auto& prefix : target_data.interface_include_prefixes)
-        {
-          if (auto it = other_target_data.interface_include_prefixes.find(prefix);
-              it != other_target_data.interface_include_prefixes.end())
-          {
-            return std::format(
-              "{} and {} have conflicting include directories and share {} as an include prefix.\n",
-              target.name,
-              other_target.name,
-              prefix);
-          }
-        }
-      }
-    }
-  }
-
-  return {};
-}
-
 std::optional<std::reference_wrapper<const Target_data>> Target_model::get_target_data(
   const Target& target) const
 {
