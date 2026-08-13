@@ -14,8 +14,13 @@ namespace lwyi
 {
 struct Target_config
 {
-  bool skip_validation{false};
   std::set<std::string> interface_include_prefixes;
+  std::set<target_model::Target> allow_includes_set;
+  std::set<target_model::Target> allow_links_set;
+  bool allow_includes{false};
+  bool allow_links{false};
+  bool interface_allow_includes{false};
+  bool interface_allow_links{false};
 };
 
 class Config

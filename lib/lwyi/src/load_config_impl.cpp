@@ -8,6 +8,7 @@
 
 #include <simdjson.h>
 
+#include <cassert>
 #include <expected>
 #include <format>
 #include <map>
@@ -69,19 +70,6 @@ std::expected<Config, std::string> load_config_impl(const simdjson::padded_strin
 
     Target_config target_config;
 
-    simdjson::ondemand::value skip_validation_value;
-    if (!target_object.find_field_unordered("skip_validation").get(skip_validation_value))
-    {
-      bool skip_validation = false;
-      if (auto error = skip_validation_value.get_bool().get(skip_validation))
-      {
-        return std::unexpected(std::format("target '{}'.skip_validation: {}",
-                                           target_name,
-                                           simdjson::error_message(error)));
-      }
-      target_config.skip_validation = skip_validation;
-    }
-
     simdjson::ondemand::value prefixes_value;
     if (!target_object.find_field_unordered("interface_include_prefixes").get(prefixes_value))
     {
@@ -103,6 +91,103 @@ std::expected<Config, std::string> load_config_impl(const simdjson::padded_strin
         }
         target_config.interface_include_prefixes.insert(std::string(prefix));
       }
+    }
+
+    simdjson::ondemand::value allow_includes_value;
+    if (!target_object.find_field_unordered("allow_includes").get(allow_includes_value))
+    {
+      simdjson::ondemand::json_type type = allow_includes_value.type();
+      if (type == simdjson::ondemand::json_type::boolean)
+      {
+        bool allow_includes = false;
+        [[maybe_unused]] auto error = allow_includes_value.get_bool().get(allow_includes);
+        assert(!error);
+        target_config.allow_includes = allow_includes;
+      }
+      else if (type == simdjson::ondemand::json_type::array)
+      {
+        simdjson::ondemand::array allow_includes;
+        [[maybe_unused]] auto error = allow_includes_value.get_array().get(allow_includes);
+        assert(!error);
+        for (auto target_value : allow_includes)
+        {
+          std::string_view target;
+          if (auto error = target_value.get(target))
+          {
+            return std::unexpected(std::format("target '{}'.allow_includes[]: {}",
+                                               target_name,
+                                               simdjson::error_message(error)));
+          }
+          target_config.allow_includes_set.emplace(std::string(target));
+        }
+      }
+      else
+      {
+        return std::unexpected(
+          std::format("target '{}'.allow_includes: expect a bool or an array", target_name));
+      }
+    }
+
+    simdjson::ondemand::value allow_links_value;
+    if (!target_object.find_field_unordered("allow_links").get(allow_links_value))
+    {
+      simdjson::ondemand::json_type type = allow_links_value.type();
+      if (type == simdjson::ondemand::json_type::boolean)
+      {
+        bool allow_links = false;
+        [[maybe_unused]] auto error = allow_links_value.get_bool().get(allow_links);
+        assert(!error);
+        target_config.allow_links = allow_links;
+      }
+      else if (type == simdjson::ondemand::json_type::array)
+      {
+        simdjson::ondemand::array allow_links;
+        [[maybe_unused]] auto error = allow_links_value.get_array().get(allow_links);
+        assert(!error);
+        for (auto target_value : allow_links)
+        {
+          std::string_view target;
+          if (auto error = target_value.get(target))
+          {
+            return std::unexpected(std::format("target '{}'.allow_links[]: {}",
+                                               target_name,
+                                               simdjson::error_message(error)));
+          }
+          target_config.allow_links_set.emplace(std::string(target));
+        }
+      }
+      else
+      {
+        return std::unexpected(
+          std::format("target '{}'.allow_links: expect a bool or an array", target_name));
+      }
+    }
+
+    simdjson::ondemand::value interface_allow_includes_value;
+    if (!target_object.find_field_unordered("interface_allow_includes")
+           .get(interface_allow_includes_value))
+    {
+      bool interface_allow_includes = false;
+      if (auto error = interface_allow_includes_value.get_bool().get(interface_allow_includes))
+      {
+        return std::unexpected(std::format("target '{}'.interface_allow_includes: {}",
+                                           target_name,
+                                           simdjson::error_message(error)));
+      }
+      target_config.interface_allow_includes = interface_allow_includes;
+    }
+
+    simdjson::ondemand::value interface_allow_links_value;
+    if (!target_object.find_field_unordered("interface_allow_links").get(interface_allow_links_value))
+    {
+      bool interface_allow_links = false;
+      if (auto error = interface_allow_links_value.get_bool().get(interface_allow_links))
+      {
+        return std::unexpected(std::format("target '{}'.interface_allow_links: {}",
+                                           target_name,
+                                           simdjson::error_message(error)));
+      }
+      target_config.interface_allow_links = interface_allow_links;
     }
 
     target_configs.emplace(target_model::Target{std::string(target_name)},

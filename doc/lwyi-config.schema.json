@@ -17,9 +17,29 @@
     "targetConfig": {
       "type": "object",
       "properties": {
-        "skip_validation": {
+        "allow_includes": {
+          "type": ["boolean", "array"],
+          "description": "A list of targets this target may include without linking, or true, which means this target may include anything.",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "allow_links": {
+          "type": ["boolean", "array"],
+          "description": "A list of targets this target may link without including, or true, which means this target may link to anything."
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "interface_allow_includes": {
           "type": "boolean",
-          "description": "If true, lwyi will skip validation for this target."
+          "description": "If true, lwyi will allow users of this target to include it without linking to it."
+        },
+        "interface_allow_links": {
+          "type": "boolean",
+          "description": "If true, lwyi will allow users of this target to link to it without including it."
         },
         "interface_include_prefixes": {
           "type": "array",
