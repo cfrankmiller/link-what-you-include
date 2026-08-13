@@ -11,8 +11,6 @@
 #include <functional>
 #include <map>
 #include <optional>
-#include <set>
-#include <string>
 #include <vector>
 
 namespace target_model
@@ -26,9 +24,6 @@ public:
     const Target& target) const;
 
   [[nodiscard]] std::vector<Target> map_header_to_targets(const std::filesystem::path& header) const;
-
-  void set_interface_include_prefixes(const Target& target,
-                                      const std::set<std::string>& prefixes);
 
   void for_each_target(const std::function<void(const Target&, const Target_data&)>& visitor) const;
 
