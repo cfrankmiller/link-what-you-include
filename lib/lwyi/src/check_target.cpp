@@ -28,10 +28,11 @@ std::map<target_model::Target, std::vector<scanner::Include>> collect_include_de
   std::map<target_model::Target, std::vector<scanner::Include>> deps;
   for (const auto& include : includes)
   {
-    auto dep = target_model.map_header_to_target(include.path);
-    if (dep.has_value())
+    auto targets = target_model.map_header_to_targets(include.path);
+    if (!targets.empty())
     {
-      deps[*dep].push_back(include);
+      // TODO: error if 1 < size
+      deps[targets[0]].push_back(include);
     }
   }
   return deps;
