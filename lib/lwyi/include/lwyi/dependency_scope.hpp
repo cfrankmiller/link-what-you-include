@@ -9,10 +9,10 @@ namespace lwyi
 {
 enum class Dependency_scope : uint8_t
 {
-  none = 0x00,
-  private_scope = 0x01,
-  interface_scope = 0x10,
-  public_scope = 0x11
+  none = 0b00,
+  private_scope = 0b01,
+  interface_scope = 0b10,
+  public_scope = 0b11
 };
 
 bool operator!(Dependency_scope v);

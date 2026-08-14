@@ -7,6 +7,7 @@ target_sources(lib_lwyi
     include/lwyi/check_target.hpp
     include/lwyi/config.hpp
     include/lwyi/dependency_scope.hpp
+    include/lwyi/dependency_visibility.hpp
     include/lwyi/load_config.hpp
     include/lwyi/strongly_connected_dependencies.hpp
   PRIVATE FILE_SET private_headers TYPE HEADERS FILES
@@ -15,6 +16,7 @@ target_sources(lib_lwyi
     src/check_target.cpp
     src/config.cpp
     src/dependency_scope.cpp
+    src/dependency_visibility.cpp
     src/load_config.cpp
     src/load_config_impl.cpp
     src/strongly_connected_dependencies.cpp
@@ -34,6 +36,7 @@ if(BUILD_TESTING)
       test/check_target_test.cpp
       test/config_test.cpp
       test/dependency_scope_test.cpp
+      test/dependency_visibility_test.cpp
       test/load_config_test.cpp
       test/strongly_connected_dependencies_test.cpp
     )
