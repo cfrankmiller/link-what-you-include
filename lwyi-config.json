@@ -9,6 +9,10 @@
      "interface_include_prefixes": [
        "clang", "llvm"
      ]
+   },
+   "clangDependencyScanning": {
+     "interface_allow_links": true,
+     "interface_allow_includes": true
    }
  }
 }
