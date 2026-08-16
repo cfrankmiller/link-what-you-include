@@ -4,6 +4,11 @@
      "interface_include_prefixes": [
        "catch2"
      ]
+   },
+   "clangTooling": {
+     "interface_include_prefixes": [
+       "clang", "llvm"
+     ]
    }
  }
 }
