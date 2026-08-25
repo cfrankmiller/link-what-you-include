@@ -12,7 +12,6 @@
 
 #include <simdjson.h>
 
-#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -555,7 +554,7 @@ std::expected<Target_info, std::string> read_target(const std::filesystem::path&
   return target;
 }
 
-std::expected<std::vector<std::pair<Target, Target_data>>, std::string> load_file_api_targets(
+std::expected<std::map<Target, Target_data>, std::string> load_file_api_targets(
   const std::filesystem::path& build_dir,
   File_loader& file_loader,
   simdjson::ondemand::parser& parser)
@@ -661,7 +660,7 @@ std::expected<std::vector<std::pair<Target, Target_data>>, std::string> load_fil
 
   std::map<std::string, std::string> id_to_name;
   std::map<std::string, std::vector<std::filesystem::path>> verify_sources_by_base_target;
-  std::vector<std::pair<Target, Target_data>> target_to_target_data;
+  std::map<Target, Target_data> target_to_target_data;
 
   std::vector<std::pair<std::string, std::string>> target_id_to_json;
   auto collect_targets = [&](std::string_view field_name,
@@ -811,17 +810,16 @@ std::expected<std::vector<std::pair<Target, Target_data>>, std::string> load_fil
       }
     }
 
-    target_to_target_data.emplace_back(Target{target_info->name}, std::move(target_data));
+    if (!target_to_target_data.emplace(Target{target_info->name}, std::move(target_data)).second)
+    {
+      return std::unexpected(std::format("Target {} is repeated", target_info->name));
+    }
   }
 
   for (const auto& [base_target_name, verify_sources] : verify_sources_by_base_target)
   {
-    auto it = std::ranges::find_if(target_to_target_data,
-                                   [&](const auto& pair)
-                                   {
-                                     return pair.first.name == base_target_name;
-                                   });
-    if (it != target_to_target_data.end())
+    if (auto it = target_to_target_data.find(Target{base_target_name});
+        it != target_to_target_data.end())
     {
       it->second.verify_interface_header_sets_sources.insert(verify_sources.begin(),
                                                              verify_sources.end());
@@ -851,8 +849,16 @@ std::expected<void, std::string> File_api_target_model_loader_impl::load_directo
   return {};
 }
 
-Target_model File_api_target_model_loader_impl::make_target_model()
+Target_model File_api_target_model_loader_impl::make_target_model(
+  std::map<target_model::Target, std::set<std::string>> target_prefixes)
 {
+  for (auto& [target, prefixes] : target_prefixes)
+  {
+    if (auto it = target_to_target_data_.find(target); it != target_to_target_data_.end())
+    {
+      it->second.interface_include_prefixes.insert(prefixes.begin(), prefixes.end());
+    }
+  }
   return Target_model{std::exchange(target_to_target_data_, {})};
 }
 

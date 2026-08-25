@@ -17,8 +17,10 @@
 #include <filesystem>
 #include <format>
 #include <functional>
+#include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -44,23 +46,18 @@ std::expected<int, std::string> run_lwyi(const cli::Command_options& options)
     }
   }
 
-  message::heading("Build System");
-  auto loader = target_model::Target_model_loader::create();
-  message::info("Loading metadata from CMake File API in {}", binary_dir.string());
-  const auto load_result = loader->load_directory(binary_dir);
-  if (!load_result.has_value())
-  {
-    return std::unexpected(load_result.error());
-  }
   const auto config_path = options.config_file.empty()
                              ? (binary_dir / "lwyi-config.json")
                              : std::filesystem::path(options.config_file);
-  std::optional<lwyi::Config> config;
   if (!options.config_file.empty() && !std::filesystem::is_regular_file(config_path))
   {
     return std::unexpected(
       std::format("error: config file not found: {}", config_path.string()));
   }
+
+  message::heading("Build System");
+
+  lwyi::Config config;
   if (std::filesystem::is_regular_file(config_path))
   {
     message::info("Loading config from {}", config_path.string());
@@ -71,15 +68,24 @@ std::expected<int, std::string> run_lwyi(const cli::Command_options& options)
     }
     config = std::move(*loaded_config);
   }
-  auto target_model = loader->make_target_model();
-  if (config.has_value())
+
+  auto loader = target_model::Target_model_loader::create();
+  message::info("Loading metadata from CMake File API in {}", binary_dir.string());
+  const auto load_result = loader->load_directory(binary_dir);
+  if (!load_result.has_value())
   {
-    for (const auto& [target, target_config] : config->targets)
-    {
-      target_model.set_interface_include_prefixes(target,
-                                                  target_config.interface_include_prefixes);
-    }
+    return std::unexpected(load_result.error());
   }
+
+  std::map<target_model::Target, std::set<std::string>> target_prefixes;
+  config.for_each_non_default_target_config(
+    [&target_prefixes](const target_model::Target& target,
+                       const lwyi::Target_config& target_config)
+    {
+      target_prefixes[target] = target_config.interface_include_prefixes;
+    });
+
+  auto target_model = loader->make_target_model(std::move(target_prefixes));
 
   std::vector<target_model::Target> selected_targets;
   selected_targets.reserve(options.targets.size());
@@ -105,8 +111,7 @@ std::expected<int, std::string> run_lwyi(const cli::Command_options& options)
     target_model.for_each_target(
       [&](const target_model::Target& target, const target_model::Target_data& target_data)
       {
-        if ((config.has_value() && config->skip_validation(target.name)) ||
-            target_data.imported)
+        if (config.get_target_config(target).skip_validation || target_data.imported)
         {
           return;
         }
@@ -142,7 +147,7 @@ std::expected<int, std::string> run_lwyi(const cli::Command_options& options)
         break;
       }
 
-      if (config.has_value() && config->skip_validation(target.name))
+      if (config.get_target_config(target).skip_validation)
       {
         message::note("Validation skipped by config.");
         continue;
