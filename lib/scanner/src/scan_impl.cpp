@@ -208,6 +208,8 @@ public:
     const auto filename = to_normal_path(fileEntry.tryGetRealPathName().str());
 
     message::debug("file skipped: {}", filename.string());
+    message::debug("  FileEntryRef.name:            {}", to_normal_path(file.getName().str()).string());
+    message::debug("  FileEntryRef.nameAsRequested: {}", to_normal_path(file.getNameAsRequested().str()).string());
 
     if (context_ == Context::arbitrary_file)
     {
