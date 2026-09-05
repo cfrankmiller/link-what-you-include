@@ -37,6 +37,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <print>
 #include <string>
 #include <utility>
 #include <vector>
@@ -105,10 +106,12 @@ public:
     }
 
     assert(fid.isValid());
+    //std::print("fid: {}\n", fid.getHashValue());
 
     if (initial_fid_.isInvalid())
     {
       initial_fid_ = fid;
+      //std::print("set initial_fid_ to {}\n", fid.getHashValue());
     }
 
     current_source_file_ = to_normal_path(

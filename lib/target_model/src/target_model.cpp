@@ -16,6 +16,7 @@
 #include <iterator>
 #include <map>
 #include <optional>
+#include <print>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -55,6 +56,7 @@ std::optional<std::reference_wrapper<const Target_data>> Target_model::get_targe
 
 std::vector<Target> Target_model::map_header_to_targets(const std::filesystem::path& header) const
 {
+  std::print("map_header_to_targets: {}\n", header.string());
   std::vector<Target> result;
   auto rng = std::ranges::equal_range(header_to_index_,
                                       std::make_pair(header, 0),
@@ -66,6 +68,7 @@ std::vector<Target> Target_model::map_header_to_targets(const std::filesystem::p
   {
     for (const auto& e : rng)
     {
+      std::print("  {}\n", target_to_target_data_.keys()[e.second].name);
       result.push_back(target_to_target_data_.keys()[e.second]);
     }
     return result;

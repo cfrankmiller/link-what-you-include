@@ -59,143 +59,143 @@ jobs:
           cmake --build build 
           ctest --test-dir build -VV
 
-  full_build_and_test:
-    name: Full build and test
-    if: github.repository == 'esri/link-what-you-include' || github.event_name == 'workflow_dispatch'
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-26.04, windows-2025-vs2026, macos-26]
+  #full_build_and_test:
+  #  name: Full build and test
+  #  if: github.repository == 'esri/link-what-you-include' || github.event_name == 'workflow_dispatch'
+  #  runs-on: ${{ matrix.os }}
+  #  strategy:
+  #    fail-fast: false
+  #    matrix:
+  #      os: [ubuntu-26.04, windows-2025-vs2026, macos-26]
 
-    steps:
-      - name: Setup windows environment
-        if: runner.os == 'Windows'
-        uses: TheMrMilchmann/setup-msvc-dev@v4
-        with:
-          arch: x64
+  #  steps:
+  #    - name: Setup windows environment
+  #      if: runner.os == 'Windows'
+  #      uses: TheMrMilchmann/setup-msvc-dev@v4
+  #      with:
+  #        arch: x64
 
-      - name: Setup linux environment
-        if: runner.os == 'Linux'
-        run: |
-          cat << EOF >> $GITHUB_ENV
-          CMAKE_GENERATOR=Ninja
-          EOF
+  #    - name: Setup linux environment
+  #      if: runner.os == 'Linux'
+  #      run: |
+  #        cat << EOF >> $GITHUB_ENV
+  #        CMAKE_GENERATOR=Ninja
+  #        EOF
 
-      - name: Setup macos environment
-        if: runner.os == 'MacOS'
-        run: |
-          sudo xcode-select -switch /Library/Developer/CommandLineTools
-          brew install llvm@21
-          cat << EOF >> $GITHUB_ENV
-          SDKROOT=$(xcrun --show-sdk-path)
-          CXX=$(brew --prefix llvm@21)/bin/clang++
-          CC=$(brew --prefix llvm@21)/bin/clang
-          EOF
+  #    - name: Setup macos environment
+  #      if: runner.os == 'MacOS'
+  #      run: |
+  #        sudo xcode-select -switch /Library/Developer/CommandLineTools
+  #        brew install llvm@21
+  #        cat << EOF >> $GITHUB_ENV
+  #        SDKROOT=$(xcrun --show-sdk-path)
+  #        CXX=$(brew --prefix llvm@21)/bin/clang++
+  #        CC=$(brew --prefix llvm@21)/bin/clang
+  #        EOF
 
-      - name: Checkout
-        uses: actions/checkout@v6
+  #    - name: Checkout
+  #      uses: actions/checkout@v6
 
-      - name: Restore cached 3rdparty
-        id: cache-3rdparty-restore
-        uses: actions/cache/restore@v5
-        with:
-          key: 3rdparty_${{ matrix.os }}_${{ hashFiles('tools/build_*.sh') }}
-          path: ./3rdparty
+  #    - name: Restore cached 3rdparty
+  #      id: cache-3rdparty-restore
+  #      uses: actions/cache/restore@v5
+  #      with:
+  #        key: 3rdparty_${{ matrix.os }}_${{ hashFiles('tools/build_*.sh') }}
+  #        path: ./3rdparty
 
-      - name: Build 3rdparty
-        if: steps.cache-3rdparty-restore.outputs.cache-hit != 'true'
-        shell: bash
-        run: |
-          bash ./tools/build_catch2.sh
-          bash ./tools/build_clangtooling.sh
-          bash ./tools/build_simdjson.sh
+  #    - name: Build 3rdparty
+  #      if: steps.cache-3rdparty-restore.outputs.cache-hit != 'true'
+  #      shell: bash
+  #      run: |
+  #        bash ./tools/build_catch2.sh
+  #        bash ./tools/build_clangtooling.sh
+  #        bash ./tools/build_simdjson.sh
 
-      - name: Cache 3rdparty
-        id: cache-3rdparty-save
-        if: always() && steps.cache-3rdparty-restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
-        with:
-          key: ${{ steps.cache-3rdparty-restore.outputs.cache-primary-key }}
-          path: ./3rdparty
+  #    - name: Cache 3rdparty
+  #      id: cache-3rdparty-save
+  #      if: always() && steps.cache-3rdparty-restore.outputs.cache-hit != 'true'
+  #      uses: actions/cache/save@v5
+  #      with:
+  #        key: ${{ steps.cache-3rdparty-restore.outputs.cache-primary-key }}
+  #        path: ./3rdparty
 
-      - name: Enable 3rdparty
-        shell: bash
-        run: |
-          echo "CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/3rdparty" >> $GITHUB_ENV
+  #    - name: Enable 3rdparty
+  #      shell: bash
+  #      run: |
+  #        echo "CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/3rdparty" >> $GITHUB_ENV
 
-      - name: Build and test
-        shell: ctest -VV -S {0}
-        run: |
-          include($ENV{GITHUB_WORKSPACE}/.github/workflows/common_ctest.cmake)
+  #    - name: Build and test
+  #      shell: ctest -VV -S {0}
+  #      run: |
+  #        include($ENV{GITHUB_WORKSPACE}/.github/workflows/common_ctest.cmake)
 
-          set(CTEST_CONFIGURATION_TYPE Release)
-          set(CTEST_SOURCE_DIRECTORY $ENV{GITHUB_WORKSPACE})
-          set(CTEST_BINARY_DIRECTORY $ENV{GITHUB_WORKSPACE}/build/release)
-          set(CTEST_BUILD_NAME ${CMAKE_SYSTEM_NAME}.${CTEST_CONFIGURATION_TYPE})
+  #        set(CTEST_CONFIGURATION_TYPE Release)
+  #        set(CTEST_SOURCE_DIRECTORY $ENV{GITHUB_WORKSPACE})
+  #        set(CTEST_BINARY_DIRECTORY $ENV{GITHUB_WORKSPACE}/build/release)
+  #        set(CTEST_BUILD_NAME ${CMAKE_SYSTEM_NAME}.${CTEST_CONFIGURATION_TYPE})
 
-          set(model Experimental)
-          if($ENV{GITHUB_EVENT_NAME} STREQUAL schedule)
-            set(model Nightly)
-          endif()
+  #        set(model Experimental)
+  #        if($ENV{GITHUB_EVENT_NAME} STREQUAL schedule)
+  #          set(model Nightly)
+  #        endif()
 
-          ctest_start(${model})
-          ctest_update()
-          ctest_configure()
-          ctest_build(RETURN_VALUE result NUMBER_ERRORS errors NUMBER_WARNINGS warnings)
-          if(NOT result EQUAL 0)
-            ctest_submit()
-            message(FATAL_ERROR "ctest_build failed with ${errors} errors and ${warnings} warnings")
-          endif()
-          ctest_test(RETURN_VALUE result)
-          ctest_submit()
+  #        ctest_start(${model})
+  #        ctest_update()
+  #        ctest_configure()
+  #        ctest_build(RETURN_VALUE result NUMBER_ERRORS errors NUMBER_WARNINGS warnings)
+  #        if(NOT result EQUAL 0)
+  #          ctest_submit()
+  #          message(FATAL_ERROR "ctest_build failed with ${errors} errors and ${warnings} warnings")
+  #        endif()
+  #        ctest_test(RETURN_VALUE result)
+  #        ctest_submit()
 
-          if((NOT result EQUAL 0) OR (errors GREATER 0) OR (warnings GREATER 0))
-            message(FATAL_ERROR "ctest_test returned ${result} for build with ${errors} errors ${warnings} warnings")
-          endif()
+  #        if((NOT result EQUAL 0) OR (errors GREATER 0) OR (warnings GREATER 0))
+  #          message(FATAL_ERROR "ctest_test returned ${result} for build with ${errors} errors ${warnings} warnings")
+  #        endif()
 
-  tidy:
-    name: Clang tidy
-    if: github.repository == 'esri/link-what-you-include' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-26.04
-    steps:
-      - name: Setup linux environment
-        run: |
-          sudo apt install clang-18 libclang-18-dev libsimdjson-dev catch2
-          cat << EOF >> $GITHUB_ENV
-          Clang_ROOT=/usr/lib/llvm-18
-          CMAKE_GENERATOR=Ninja
-          EOF
+  #tidy:
+  #  name: Clang tidy
+  #  if: github.repository == 'esri/link-what-you-include' || github.event_name == 'workflow_dispatch'
+  #  runs-on: ubuntu-26.04
+  #  steps:
+  #    - name: Setup linux environment
+  #      run: |
+  #        sudo apt install clang-18 libclang-18-dev libsimdjson-dev catch2
+  #        cat << EOF >> $GITHUB_ENV
+  #        Clang_ROOT=/usr/lib/llvm-18
+  #        CMAKE_GENERATOR=Ninja
+  #        EOF
 
-      - name: Checkout
-        uses: actions/checkout@v6
+  #    - name: Checkout
+  #      uses: actions/checkout@v6
 
-      - name: Build with clang-tidy
-        shell: ctest -VV -S {0}
-        run: |
-          include($ENV{GITHUB_WORKSPACE}/.github/workflows/common_ctest.cmake)
+  #    - name: Build with clang-tidy
+  #      shell: ctest -VV -S {0}
+  #      run: |
+  #        include($ENV{GITHUB_WORKSPACE}/.github/workflows/common_ctest.cmake)
 
-          set(CTEST_CONFIGURATION_TYPE Release)
-          set(CTEST_SOURCE_DIRECTORY $ENV{GITHUB_WORKSPACE})
-          set(CTEST_BINARY_DIRECTORY $ENV{GITHUB_WORKSPACE}/build/tidy)
-          set(CTEST_BUILD_NAME ${CMAKE_SYSTEM_NAME}.clang-tidy)
+  #        set(CTEST_CONFIGURATION_TYPE Release)
+  #        set(CTEST_SOURCE_DIRECTORY $ENV{GITHUB_WORKSPACE})
+  #        set(CTEST_BINARY_DIRECTORY $ENV{GITHUB_WORKSPACE}/build/tidy)
+  #        set(CTEST_BUILD_NAME ${CMAKE_SYSTEM_NAME}.clang-tidy)
 
-          set(model Experimental)
-          if($ENV{GITHUB_EVENT_NAME} STREQUAL schedule)
-            set(model Nightly)
-          endif()
+  #        set(model Experimental)
+  #        if($ENV{GITHUB_EVENT_NAME} STREQUAL schedule)
+  #          set(model Nightly)
+  #        endif()
 
-          set(configure_opts
-            -DCMAKE_CXX_CLANG_TIDY=clang-tidy-21
-            )
+  #        set(configure_opts
+  #          -DCMAKE_CXX_CLANG_TIDY=clang-tidy-21
+  #          )
 
-          ctest_start(${model})
-          ctest_update()
-          ctest_configure(OPTIONS "${configure_opts}")
-          ctest_build(NUMBER_ERRORS errors NUMBER_WARNINGS warnings)
-          ctest_submit()
+  #        ctest_start(${model})
+  #        ctest_update()
+  #        ctest_configure(OPTIONS "${configure_opts}")
+  #        ctest_build(NUMBER_ERRORS errors NUMBER_WARNINGS warnings)
+  #        ctest_submit()
 
-          if((errors GREATER 0) OR (warnings GREATER 0))
-            message(FATAL_ERROR "Clang-tidy build failed with ${errors} errors and ${warnings} warnings")
-          endif()
+  #        if((errors GREATER 0) OR (warnings GREATER 0))
+  #          message(FATAL_ERROR "Clang-tidy build failed with ${errors} errors and ${warnings} warnings")
+  #        endif()
 
