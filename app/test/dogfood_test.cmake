@@ -61,15 +61,24 @@ execute_process(
   ERROR_STRIP_TRAILING_WHITESPACE
 )
 
+message("stdout:\n${output}\nstderr:\n${error_output}")
+
+#if(NOT result EQUAL 0)
+#  message(
+#    FATAL_ERROR
+#      "dogfood command failed with exit code ${result}\nstdout:\n${output}\nstderr:\n${error_output}"
+#  )
+#endif()
+#
+#if(error_output)
+#  message(FATAL_ERROR "dogfood command wrote to stderr:\n${error_output}")
+#endif()
+
 if(NOT result EQUAL 0)
   message(
     FATAL_ERROR
-      "dogfood command failed with exit code ${result}\nstdout:\n${output}\nstderr:\n${error_output}"
+      "dogfood command failed with exit code ${result}"
   )
-endif()
-
-if(error_output)
-  message(FATAL_ERROR "dogfood command wrote to stderr:\n${error_output}")
 endif()
 
 function(check_matches output)
