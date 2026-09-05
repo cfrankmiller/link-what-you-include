@@ -90,6 +90,7 @@ if(ENABLE_DOGFOODING)
   # Teach CMake about headers for our imported targets
   # Note, this should ideally be done by the upstream package
   get_target_property(simdjson_include simdjson::simdjson INTERFACE_INCLUDE_DIRECTORIES)
+  message("simdjson_include: ${simdjson_include}")
   target_sources(simdjson::simdjson
     INTERFACE
     FILE_SET HEADERS

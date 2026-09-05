@@ -20,6 +20,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <print>
 #include <set>
 #include <string>
 #include <string_view>
@@ -103,6 +104,19 @@ std::expected<int, std::string> run_lwyi(const cli::Command_options& options)
                                                       : std::thread::hardware_concurrency();
   message::info("Scanning with {} thread{}", num_threads, num_threads == 1 ? "" : "s");
   message::blank_line();
+
+  {
+    std::print("simdjson::simdjson interface headers:\n");
+    auto odata = target_model.get_target_data(target_model::Target{"simdjson::simdjson"});
+    if (odata.has_value())
+    {
+      auto data = odata->get();
+      for (const auto& header : data.interface_headers)
+      {
+        std::print("  {}\n", header.string());
+      }
+    }
+  }
 
   bool success = true;
   bool first_target = true;
