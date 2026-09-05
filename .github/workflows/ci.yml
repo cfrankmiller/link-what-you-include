@@ -57,7 +57,7 @@ jobs:
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
           cmake --build build 
-          ctest --test-dir build 
+          ctest --test-dir build -VV
 
   full_build_and_test:
     name: Full build and test
