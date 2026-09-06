@@ -201,8 +201,7 @@ public:
                    const clang::Token& /*filename_tok*/,
                    clang::SrcMgr::CharacteristicKind /*file_type*/) override
   {
-    const auto& fileEntry = file.getFileEntry();
-    const auto filename = to_normal_path(fileEntry.tryGetRealPathName().str());
+    const auto filename = to_normal_path(file.getName().str());
 
     message::debug("file skipped: {}", filename.string());
 
