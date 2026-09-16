@@ -111,8 +111,17 @@ public:
       initial_fid_ = fid;
     }
 
-    current_source_file_ = to_normal_path(
-      preprocessor_.getSourceManager().getSLocEntry(fid).getFile().getName().str());
+    if (auto file_entry_ref = preprocessor_.getSourceManager().getFileEntryRefForID(fid);
+        file_entry_ref.has_value())
+    {
+      current_source_file_ = to_normal_path(file_entry_ref->getNameAsRequested().str());
+    }
+    else
+    {
+      assert(!"We expect to always get a valid file entry ref");
+      context_ = Context::arbitrary_file;
+      return;
+    }
 
     const auto previous_context = context_;
     const auto previous_include_set = current_include_set_;
@@ -213,8 +222,7 @@ public:
                    const clang::Token& /*filename_tok*/,
                    clang::SrcMgr::CharacteristicKind /*file_type*/) override
   {
-    const auto& fileEntry = file.getFileEntry();
-    const auto filename = to_normal_path(fileEntry.tryGetRealPathName().str());
+    const auto filename = to_normal_path(file.getNameAsRequested().str());
 
     message::debug("file skipped: {}", filename.string());
 
@@ -285,7 +293,7 @@ private:
       -> std::optional<llvm::ArrayRef<clang::dependency_directives_scan::Directive>>
     {
       if (llvm::ErrorOr<clang::tooling::dependencies::EntryRef> entry =
-            dep_fs->getOrCreateFileSystemEntry(file.getName()))
+            dep_fs->getOrCreateFileSystemEntry(file.getNameAsRequested()))
       {
         return entry->getDirectiveTokens();
       }
