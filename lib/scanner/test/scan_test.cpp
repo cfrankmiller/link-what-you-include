@@ -3,6 +3,7 @@
 
 #include <scanner/scan.hpp>
 
+#include <message/message.hpp>
 #include <scanner/include.hpp>
 #include <src/merge_includes.hpp>
 #include <src/scan_impl.hpp>
@@ -85,6 +86,7 @@ void add_file(llvm::vfs::InMemoryFileSystem& fs, const Literal_file& file)
 
 TEST_CASE("scanner: basic scan test", "[scanner]")
 {
+  message::configure(message::Color_output::never, message::Message_level::normal);
   auto fs = llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem>{
     new llvm::vfs::InMemoryFileSystem};
 
@@ -141,6 +143,7 @@ TEST_CASE("scanner: basic scan test", "[scanner]")
 TEST_CASE("scanner: scan does not collect headers included transitively from non-source files",
           "[scanner]")
 {
+  message::configure(message::Color_output::never, message::Message_level::normal);
   auto fs = llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem>{
     new llvm::vfs::InMemoryFileSystem};
 
@@ -202,6 +205,7 @@ TEST_CASE("scanner: scan does not collect headers included transitively from non
 TEST_CASE("scanner: scan collects headers included transitively from interface headers",
           "[scanner]")
 {
+  message::configure(message::Color_output::never, message::Message_level::normal);
   auto fs = llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem>{
     new llvm::vfs::InMemoryFileSystem};
 
@@ -269,6 +273,7 @@ TEST_CASE("scanner: scan collects headers included transitively from interface h
 TEST_CASE("scanner: scan collects headers included transitively from private headers",
           "[scanner]")
 {
+  message::configure(message::Color_output::never, message::Message_level::normal);
   auto fs = llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem>{
     new llvm::vfs::InMemoryFileSystem};
 
@@ -338,6 +343,7 @@ TEST_CASE("scanner: scan collects headers included transitively from private hea
 TEST_CASE("scanner: scan can distinguish private sources in the interface include directory",
           "[scanner]")
 {
+  message::configure(message::Color_output::never, message::Message_level::normal);
   auto fs = llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem>{
     new llvm::vfs::InMemoryFileSystem};
 
