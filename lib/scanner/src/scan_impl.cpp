@@ -114,38 +114,50 @@ public:
     current_source_file_ = to_normal_path(
       preprocessor_.getSourceManager().getSLocEntry(fid).getFile().getName().str());
 
-    message::debug("# {} {}",
-                   (reason == LexedFileChangeReason::ExitFile ? "Reenter" : "Enter"),
-                   current_source_file_.string());
-
     const auto previous_context = context_;
     const auto previous_include_set = current_include_set_;
 
     if (fid != initial_fid_ &&
         target_model::is_interface_header(target_data_, current_source_file_))
     {
-      message::debug("Context interface header");
       context_ = Context::interface_header;
       current_include_set_ = &include_data_.interface_header_includes[current_source_file_];
     }
     else if (target_model::is_private_source(target_data_, current_source_file_))
     {
-      message::debug("Context source");
       context_ = Context::source_file;
       current_include_set_ = &include_data_.includes;
     }
     else
     {
-      message::debug("Context arbitrary file");
       context_ = Context::arbitrary_file;
       current_include_set_ = nullptr;
     }
+
+    message::debug(
+      "{} {} {} ({})",
+      (reason == LexedFileChangeReason::ExitFile ? "Reenter" : "Enter"),
+      [&]()
+      {
+        switch (context_)
+        {
+          case Context::interface_header:
+            return "interface header";
+          case Context::source_file:
+            return "source";
+          case Context::arbitrary_file:
+            return "arbitrary file";
+        }
+        std::unreachable();
+      }(),
+      current_source_file_.string(),
+      fid.getHashValue());
 
     if (reason == LexedFileChangeReason::EnterFile)
     {
       if (!last_include_loc_.source.empty())
       {
-        message::debug("Push include chain {}", last_include_loc_.source.string());
+        message::debug("Push include chain {}:{}", last_include_loc_.source.string(), last_include_loc_.line);
         include_chain_.emplace_back(last_include_loc_);
       }
 
@@ -161,7 +173,7 @@ public:
     {
       if (!include_chain_.empty())
       {
-        message::debug("Pop include chain {}", include_chain_.back().source.string());
+        message::debug("Pop include chain {}:{}", include_chain_.back().source.string(), include_chain_.back().line);
         include_chain_.pop_back();
       }
 
