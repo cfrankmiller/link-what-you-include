@@ -27,7 +27,7 @@
 
 namespace
 {
-constexpr std::string_view usage_string = R"(Usage:
+constexpr std::string_view graph_usage_string = R"(Usage:
   {0} [options]
 
 Possible options:
@@ -36,19 +36,19 @@ Possible options:
                             additional file for each strongly connected
                             component will also be created based on this name.)";
 
-struct Options
+struct Graph_options
 {
   bool help{false};
   std::string_view output_filename;
 };
 
-constexpr auto parser = util::arg_parser<Options>()
-                          .arg("-h", "--help", &Options::help)
-                          .arg("-o", "--output", &Options::output_filename);
+constexpr auto graph_arg_parser = util::arg_parser<Graph_options>()
+                                    .arg("-h", "--help", &Graph_options::help)
+                                    .arg("-o", "--output", &Graph_options::output_filename);
 
 std::string usage(std::string_view name)
 {
-  return std::format(usage_string, name);
+  return std::format(graph_usage_string, name);
 }
 
 std::unique_ptr<FILE, int (*)(FILE*)> open_file(const std::filesystem::path& path,
@@ -64,7 +64,7 @@ int graph_tool(const target_model::Target_model& target_model,
 {
   assert(!args.empty() && args.front() == "graph");
 
-  auto result = parser.parse(args.begin() + 1, args.end());
+  auto result = graph_arg_parser.parse(args.begin() + 1, args.end());
 
   if (!result.has_value())
   {
