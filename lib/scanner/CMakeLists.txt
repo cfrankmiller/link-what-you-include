@@ -81,6 +81,7 @@ if(BUILD_TESTING)
       lib_target_model
       Catch2::Catch2WithMain
       clangTooling
+      lib_message
     )
   catch_discover_tests(lib_scanner_test ADD_TAGS_AS_LABELS)
 endif()

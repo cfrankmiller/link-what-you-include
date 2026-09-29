@@ -43,7 +43,7 @@ endif()
 if(LWYI_EXPECT_MESSAGE_LEVEL STREQUAL "debug")
   set(expect_verbose TRUE)
   set(expect_debug TRUE)
-  list(INSERT command_args 1 --debug)
+  list(INSERT command_args 1 --debug -j 1)
 elseif(LWYI_EXPECT_MESSAGE_LEVEL STREQUAL "verbose")
   set(expect_verbose TRUE)
   list(INSERT command_args 1 --verbose)
@@ -56,20 +56,14 @@ execute_process(
   COMMAND ${command_args}
   RESULT_VARIABLE result
   OUTPUT_VARIABLE output
-  ERROR_VARIABLE error_output
+  ERROR_VARIABLE output
   OUTPUT_STRIP_TRAILING_WHITESPACE
   ERROR_STRIP_TRAILING_WHITESPACE
 )
 
 if(NOT result EQUAL 0)
-  message(
-    FATAL_ERROR
-      "dogfood command failed with exit code ${result}\nstdout:\n${output}\nstderr:\n${error_output}"
-  )
-endif()
-
-if(error_output)
-  message(FATAL_ERROR "dogfood command wrote to stderr:\n${error_output}")
+  message("${output}")
+  message(FATAL_ERROR "dogfood command failed with exit code ${result}")
 endif()
 
 function(check_matches output)
