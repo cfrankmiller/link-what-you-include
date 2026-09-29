@@ -21,22 +21,22 @@ class Target_model;
 
 namespace
 {
-constexpr std::string_view usage_string = R"(Usage:
+constexpr std::string_view tidy_usage_string = R"(Usage:
   tidy [options]
 
 Possible options:
   -h, --help                Print this help message.
   -c, --config FILE         Path to config file.)";
 
-struct Options
+struct Tidy_options
 {
   bool help{false};
   std::string_view config_filename;
 };
 
-constexpr auto parser = util::arg_parser<Options>()
-                          .arg("-h", "--help", &Options::help)
-                          .arg("-c", "--config", &Options::config_filename);
+constexpr auto tidy_arg_parser = util::arg_parser<Tidy_options>()
+                                   .arg("-h", "--help", &Tidy_options::help)
+                                   .arg("-c", "--config", &Tidy_options::config_filename);
 } // namespace
 
 int tidy_tool(const target_model::Target_model& target_model,
@@ -45,11 +45,11 @@ int tidy_tool(const target_model::Target_model& target_model,
 {
   assert(!args.empty() && args.front() == "tidy");
 
-  auto result = parser.parse(args.begin() + 1, args.end());
+  auto result = tidy_arg_parser.parse(args.begin() + 1, args.end());
 
   if (!result.has_value())
   {
-    message::error_block(result.error(), std::string{usage_string});
+    message::error_block(result.error(), std::string{tidy_usage_string});
     return 1;
   }
 
@@ -57,12 +57,12 @@ int tidy_tool(const target_model::Target_model& target_model,
 
   if (options.help)
   {
-    message::print(usage_string);
+    message::print(tidy_usage_string);
     return 1;
   }
   if (options.config_filename.empty())
   {
-    message::error_block("A config file is required.", std::string{usage_string});
+    message::error_block("A config file is required.", std::string{tidy_usage_string});
     return 1;
   }
 
