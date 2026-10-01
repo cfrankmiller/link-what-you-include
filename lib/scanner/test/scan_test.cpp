@@ -340,6 +340,67 @@ TEST_CASE("scanner: scan collects headers included transitively from private hea
   CHECK(output->includes[2].path == c_hpp.path);
 }
 
+TEST_CASE("scanner: scan propagates headers when a private header is re-included from a public",
+          "[scanner]")
+{
+  message::configure(message::Color_output::never, message::Message_level::normal);
+  auto fs = llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem>{
+    new llvm::vfs::InMemoryFileSystem};
+
+  // private_source.cpp
+  // ├── private_header.hpp
+  // │   └── a.hpp
+  // └── interface_header.hpp
+  //     └── private_header.hpp
+  //         └── a.hpp
+
+  // external
+  Literal_file external_header{"/a.hpp", ""};
+
+  // interface
+  Literal_file interface_header{"/interface_header.hpp", R"(
+    #include "private_header.hpp"
+    )"};
+
+  // private
+  Literal_file private_source{"/private_source.cpp", R"(
+    #include "private_header.hpp"
+    #include "interface_header.hpp"
+    )"};
+  Literal_file private_header{"/private_header.hpp", R"(
+    #include "a.hpp"
+    )"};
+
+  add_file(*fs, external_header);
+  add_file(*fs, interface_header);
+  add_file(*fs, private_source);
+  add_file(*fs, private_header);
+
+  target_model::Target_data target_data;
+  target_data.interface_headers = {interface_header.path};
+  target_data.sources = {private_source.path, private_header.path};
+
+  std::filesystem::path cwd{"/"};
+  scanner::Compile_command compile_commands{cwd,
+                                            private_source.path,
+                                            std::vector<std::string>{"clang",
+                                                                     private_source.path}};
+
+  clang::tooling::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
+
+  auto result = scanner::scan_impl(fs, dep_cache, target_data, compile_commands);
+  REQUIRE(result.has_value() == true);
+  auto output = scanner::merge_includes({*result});
+  REQUIRE(output.has_value() == true);
+
+  REQUIRE(output.has_value() == true);
+  REQUIRE(output->interface_includes.size() == 1);
+  REQUIRE(output->includes.size() == 1);
+
+  CHECK(output->includes[0].path == external_header.path);
+  CHECK(output->interface_includes[0].path == external_header.path);
+}
+
 TEST_CASE("scanner: scan can distinguish private sources in the interface include directory",
           "[scanner]")
 {
