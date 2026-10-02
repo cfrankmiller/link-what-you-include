@@ -82,6 +82,17 @@ void add_file(llvm::vfs::InMemoryFileSystem& fs, const Literal_file& file)
 
 TEST_CASE("scanner: basic scan test", "[scanner]")
 {
+  // Given:
+  //         private.cpp 
+  //           ╱     ╲
+  //   interface.hpp  ╲
+  //         ╱         ╲
+  //      a.hpp       b.hpp
+  //
+  // Expect:
+  //   dependencies:           a.hpp and b.hpp
+  //   interface dependencies: a.hpp
+
   message::configure(message::Color_output::never, message::Message_level::normal);
   auto fs = llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem>{
     new llvm::vfs::InMemoryFileSystem};
@@ -139,6 +150,19 @@ TEST_CASE("scanner: basic scan test", "[scanner]")
 TEST_CASE("scanner: scan does not collect headers included transitively from non-source files",
           "[scanner]")
 {
+  // Given:
+  //         private.cpp 
+  //           ╱     ╲
+  //   interface.hpp  ╲
+  //         ╱         ╲
+  //      a.hpp       b.hpp
+  //        │           │
+  //      x.hpp       y.hpp
+  //
+  // Expect:
+  //   dependencies:           a.hpp and b.hpp
+  //   interface dependencies: a.hpp
+
   message::configure(message::Color_output::never, message::Message_level::normal);
   auto fs = llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem>{
     new llvm::vfs::InMemoryFileSystem};
@@ -201,6 +225,25 @@ TEST_CASE("scanner: scan does not collect headers included transitively from non
 TEST_CASE("scanner: scan collects headers included transitively from interface headers",
           "[scanner]")
 {
+  // Given:
+  //     private.cpp 
+  //          ╲
+  //           ╲
+  //       interface_1.hpp
+  //        ╱     ╲
+  //       ╱       ╲
+  //    a.hpp  interface_2.hpp
+  //            ╱     ╲
+  //           ╱       ╲
+  //        b.hpp  interface_3.hpp
+  //                  ╱
+  //                 ╱
+  //              c.hpp
+  //
+  // Expect:
+  //   dependencies:           a.hpp, b.hpp, and c.hpp
+  //   interface dependencies: a.hpp, b.hpp, and c.hpp
+
   message::configure(message::Color_output::never, message::Message_level::normal);
   auto fs = llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem>{
     new llvm::vfs::InMemoryFileSystem};
@@ -269,6 +312,25 @@ TEST_CASE("scanner: scan collects headers included transitively from interface h
 TEST_CASE("scanner: scan collects headers included transitively from private headers",
           "[scanner]")
 {
+  // Given:
+  //        private.cpp 
+  //         ╱      ╲
+  //        ╱        ╲
+  // interface.hpp  private_1.hpp
+  //                  ╱     ╲
+  //                 ╱       ╲
+  //              a.hpp   private_2.hpp
+  //                        ╱    ╲
+  //                       ╱      ╲
+  //                    b.hpp  private_3.hpp
+  //                             ╱
+  //                            ╱
+  //                         c.hpp
+  //
+  // Expect:
+  //   dependencies:           a.hpp, b.hpp, and c.hpp
+  //   interface dependencies:
+
   message::configure(message::Color_output::never, message::Message_level::normal);
   auto fs = llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem>{
     new llvm::vfs::InMemoryFileSystem};
@@ -334,6 +396,154 @@ TEST_CASE("scanner: scan collects headers included transitively from private hea
   CHECK(output->includes[0].path == a_hpp.path);
   CHECK(output->includes[1].path == b_hpp.path);
   CHECK(output->includes[2].path == c_hpp.path);
+}
+
+TEST_CASE("scanner: scanner can see dependencies included multiple times", "[scanner]")
+{
+  // Given:
+  //           private.cpp
+  //             ╱       ╲
+  //            ╱         ╲
+  //      private_1.hpp    ╲
+  //            ╲          ╱
+  //             ╲        ╱
+  //           private_2.hpp
+  //                 │
+  //                 │
+  //               a.hpp
+  //
+  // Expect:
+  //   dependencies:           a.hpp
+  //   interface dependencies:
+
+  message::configure(message::Color_output::never, message::Message_level::debug);
+  auto fs = llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem>{
+    new llvm::vfs::InMemoryFileSystem};
+
+  // 3rdparty
+  Literal_file a_hpp{"/a.hpp", ""};
+
+  // private
+  Literal_file private_cpp{"/private.cpp", R"(
+    #include "private_1.hpp"
+    #include "private_2.hpp"
+    )"};
+  Literal_file private_1_hpp{"/private_1.hpp", R"(
+    #ifndef private_1_hpp_guard
+    #define private_1_hpp_guard
+    #include "private_2.hpp"
+    #endif
+    )"};
+  Literal_file private_2_hpp{"/private_2.hpp", R"(
+    #include "a.hpp"
+    )"};
+
+  add_file(*fs, a_hpp);
+  add_file(*fs, private_cpp);
+  add_file(*fs, private_1_hpp);
+  add_file(*fs, private_2_hpp);
+
+  target_model::Target_data target_data;
+  target_data.sources = {private_cpp.path, private_1_hpp.path, private_2_hpp.path};
+
+  std::filesystem::path cwd{"/"};
+  scanner::Compile_command compile_commands{cwd,
+                                            private_cpp.path,
+                                            std::vector<std::string>{"clang",
+                                                                     private_cpp.path}};
+
+  clang::tooling::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
+
+  auto result = scanner::scan_impl(fs, dep_cache, target_data, compile_commands);
+
+  REQUIRE(result.has_value() == true);
+  //dump(*result);
+
+  auto output = scanner::merge_includes({*result});
+  //dump(*output);
+  REQUIRE(output.has_value() == true);
+
+  REQUIRE(output.has_value() == true);
+  REQUIRE(output->interface_includes.size() == 0);
+  REQUIRE(output->includes.size() == 1);
+
+  CHECK(output->includes[0].path == a_hpp.path);
+}
+
+TEST_CASE("scanner: scanner can see interface dependencies included multiple times", "[scanner]")
+{
+  // Given:
+  //           private.cpp
+  //             ╱       ╲
+  //            ╱         ╲
+  //     interface_1.hpp   ╲
+  //            ╲          ╱
+  //             ╲        ╱
+  //          interface_2.hpp
+  //                 │
+  //                 │
+  //               a.hpp
+  //
+  // Expect:
+  //   dependencies:           a.hpp
+  //   interface dependencies: a.hpp
+
+  message::configure(message::Color_output::never, message::Message_level::normal);
+  auto fs = llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem>{
+    new llvm::vfs::InMemoryFileSystem};
+
+  // 3rdparty
+  Literal_file a_hpp{"/a.hpp", ""};
+
+  // interface
+  Literal_file interface_1_hpp{"/interface_1.hpp", R"(
+    #ifndef interface_hpp_guard
+    #define interface_hpp_guard
+    #include "interface_2.hpp"
+    #endif
+    )"};
+  Literal_file interface_2_hpp{"/interface_2.hpp", R"(
+    #include "a.hpp"
+    )"};
+
+  // private
+  Literal_file private_cpp{"/private.cpp", R"(
+    #include "interface_1.hpp"
+    #include "interface_2.hpp"
+    )"};
+
+  add_file(*fs, a_hpp);
+  add_file(*fs, interface_1_hpp);
+  add_file(*fs, interface_2_hpp);
+  add_file(*fs, private_cpp);
+
+  target_model::Target_data target_data;
+  target_data.interface_headers = {interface_1_hpp.path, interface_2_hpp.path};
+  target_data.sources = {private_cpp.path};
+
+  std::filesystem::path cwd{"/"};
+  scanner::Compile_command compile_commands{cwd,
+                                            private_cpp.path,
+                                            std::vector<std::string>{"clang",
+                                                                     private_cpp.path}};
+
+  clang::tooling::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
+
+  auto result = scanner::scan_impl(fs, dep_cache, target_data, compile_commands);
+
+  REQUIRE(result.has_value() == true);
+  //dump(*result);
+
+  auto output = scanner::merge_includes({*result});
+  //dump(*output);
+  REQUIRE(output.has_value() == true);
+
+  REQUIRE(output.has_value() == true);
+  REQUIRE(output->interface_includes.size() == 1);
+  REQUIRE(output->includes.size() == 1);
+
+  CHECK(output->interface_includes[0].path == a_hpp.path);
+  CHECK(output->includes[0].path == a_hpp.path);
 }
 
 TEST_CASE("scanner: scan can distinguish private sources in the interface include directory",
