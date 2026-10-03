@@ -41,12 +41,8 @@ void dump(const scanner::Include_set& include_set, std::string_view indent = "")
   std::print("includes:\n");
   dump(include_data.includes, "  ");
 
-  std::print("interface_header_includes:\n");
-  for (const auto& [header, includes] : include_data.interface_header_includes)
-  {
-    std::print("  {}:\n", header.string());
-    dump(includes, std::string("  "));
-  }
+  std::print("interface_includes:\n");
+  dump(include_data.interface_includes, "  ");
 }
 
 [[maybe_unused]] void dump(const scanner::Intransitive_includes& ii)
