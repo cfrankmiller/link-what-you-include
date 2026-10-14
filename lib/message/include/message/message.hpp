@@ -46,6 +46,7 @@ void note(std::string_view text);
 void warning(std::string_view text);
 void debug(std::string_view text);
 bool verbose_enabled();
+void flush();
 
 template <typename... TArgs>
 void print(std::format_string<TArgs...> format, TArgs&&... args)

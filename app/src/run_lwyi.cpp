@@ -103,6 +103,7 @@ std::expected<int, std::string> run_lwyi(const cli::Command_options& options)
                                                       : std::thread::hardware_concurrency();
   message::info("Scanning with {} thread{}", num_threads, num_threads == 1 ? "" : "s");
   message::blank_line();
+  message::flush();
 
   bool success = true;
   bool first_target = true;

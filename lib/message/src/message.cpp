@@ -126,6 +126,11 @@ bool verbose_enabled()
   return message_level() >= Message_level::verbose;
 }
 
+void flush()
+{
+  std::fflush(stdout);
+}
+
 void print(std::string_view text, Style style)
 {
   std::cout << paint(text, style) << '\n';

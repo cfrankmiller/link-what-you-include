@@ -78,6 +78,7 @@ bool run_lwyi_on_target(const lwyi::Config& config,
   {
     message::error_block(std::format("Failed to scan direct includes for {}", target.name),
                          eincludes.error());
+    message::flush();
     return false;
   }
 
@@ -103,6 +104,7 @@ bool run_lwyi_on_target(const lwyi::Config& config,
     message::status("ok",
                     "All included dependencies are linked correctly.",
                     message::Style::success);
+    message::flush();
     return true;
   }
 
@@ -130,5 +132,6 @@ bool run_lwyi_on_target(const lwyi::Config& config,
     }
   }
 
+  message::flush();
   return false;
 }
