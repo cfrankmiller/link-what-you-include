@@ -8,6 +8,12 @@
 #include <expected>
 #include <string>
 
+cli::Command_options configure_output(cli::Command_options options)
+{
+  message::configure(options.color_output, options.message_level);
+  return options;
+}
+
 std::expected<int, std::string> print_error(const std::string& error)
 {
   message::print(error, message::Style::error);
@@ -16,12 +22,9 @@ std::expected<int, std::string> print_error(const std::string& error)
 
 int main(int argc, const char* argv[])
 {
-  auto options = cli::parse_arguments(argc, argv);
-  if (options.has_value())
-  {
-    message::configure(options->color_output, options->message_level);
-    return run_lwyi(*options).or_else(print_error).value_or(1);
-  }
-
-  return print_error(options.error()).value_or(1);
+  return cli::parse_arguments(argc, argv)
+    .transform(configure_output)
+    .and_then(run_lwyi)
+    .or_else(print_error)
+    .value_or(1);
 }
