@@ -83,22 +83,6 @@ bool run_lwyi_on_target(const lwyi::Config& config,
   }
 
   auto errors = lwyi::check_target(config, target_model, target, target_data, *eincludes);
-
-  // TODO: consider enabling the following with a command line option
-#if 0
-  // special case: ignore linked PUBLIC but included INTERFACE errors
-  errors.erase(std::remove_if(errors.begin(),
-                              errors.end(),
-                              [](const lwyi::LWYI_error& error)
-                              {
-                                return error.linked_scope ==
-                                         lwyi::Dependency_scope::public_scope &&
-                                       error.included_scope ==
-                                         lwyi::Dependency_scope::interface_scope;
-                              }),
-               errors.end());
-#endif
-
   if (errors.empty())
   {
     message::status("ok",
