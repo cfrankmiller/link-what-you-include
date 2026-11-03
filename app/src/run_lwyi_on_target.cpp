@@ -64,9 +64,8 @@ bool run_lwyi_on_target(const lwyi::Config& config,
                         const std::filesystem::path& binary_dir,
                         const target_model::Target& target,
                         const target_model::Target_data& target_data,
-                        unsigned int num_threads)
+                        scanner::Scanner& scanner)
 {
-  static scanner::Scanner scanner(num_threads);
   if (target_data.sources.empty() && target_data.verify_interface_header_sets_sources.empty())
   {
     message::note("No sources to scan. Skipping target.");

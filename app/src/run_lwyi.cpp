@@ -7,6 +7,7 @@
 #include <lwyi/config.hpp>
 #include <lwyi/load_config.hpp>
 #include <message/message.hpp>
+#include <scanner/scan.hpp>
 #include <src/run_lwyi_on_target.hpp>
 #include <src/run_tool.hpp>
 #include <target_model/target.hpp>
@@ -104,6 +105,8 @@ std::expected<int, std::string> run_lwyi(const cli::Command_options& options)
   message::info("Scanning with {} thread{}", num_threads, num_threads == 1 ? "" : "s");
   message::blank_line();
 
+  scanner::Scanner scanner(num_threads);
+
   bool success = true;
   bool first_target = true;
   if (selected_targets.empty())
@@ -126,7 +129,7 @@ std::expected<int, std::string> run_lwyi(const cli::Command_options& options)
         message::heading("Target: {}", target.name);
 
         success &=
-          run_lwyi_on_target(config, target_model, binary_dir, target, target_data, num_threads);
+          run_lwyi_on_target(config, target_model, binary_dir, target, target_data, scanner);
       });
   }
   else
@@ -162,7 +165,7 @@ std::expected<int, std::string> run_lwyi(const cli::Command_options& options)
       }
 
       success &=
-        run_lwyi_on_target(config, target_model, binary_dir, target, *otarget_data, num_threads);
+        run_lwyi_on_target(config, target_model, binary_dir, target, *otarget_data, scanner);
     }
   }
 

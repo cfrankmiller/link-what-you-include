@@ -18,9 +18,14 @@ struct Target_data;
 class Target_model;
 } // namespace target_model
 
+namespace scanner
+{
+  class Scanner;
+};
+
 bool run_lwyi_on_target(const lwyi::Config& config,
                         const target_model::Target_model& target_model,
                         const std::filesystem::path& binary_dir,
                         const target_model::Target& target,
                         const target_model::Target_data& target_data,
-                        unsigned int num_threads);
+                        scanner::Scanner& scanner);
