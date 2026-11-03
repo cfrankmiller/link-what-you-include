@@ -5,6 +5,7 @@
 
 #include <message/message.hpp>
 #include <relative_resource_dir.hpp>
+#include <src/compile_command.hpp>
 #include <src/executable_path.hpp>
 #include <src/include_sets.hpp>
 #include <src/merge_includes.hpp>
@@ -24,11 +25,9 @@
 #include <expected>
 #include <filesystem>
 #include <format>
-#include <functional>
 #include <map>
 #include <memory>
 #include <string>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 

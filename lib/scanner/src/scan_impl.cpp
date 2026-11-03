@@ -5,6 +5,7 @@
 
 #include <message/message.hpp>
 #include <scanner/include.hpp>
+#include <src/compile_command.hpp>
 #include <src/include_sets.hpp>
 #include <target_model/target_data.hpp>
 

@@ -8,9 +8,7 @@
 #include <src/include_sets.hpp>
 
 #include <expected>
-#include <filesystem>
 #include <string>
-#include <vector>
 
 namespace llvm
 {
@@ -35,12 +33,7 @@ struct Target_data;
 
 namespace scanner
 {
-struct Compile_command
-{
-  std::filesystem::path cwd;
-  std::filesystem::path source;
-  std::vector<std::string> command;
-};
+struct Compile_command;
 
 struct Include_data
 {

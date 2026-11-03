@@ -6,6 +6,7 @@
 #include <message/message.hpp>
 #include <scanner/include.hpp>
 #include <src/scan_impl.hpp>
+#include <src/compile_command.hpp>
 #include <target_model/target_data.hpp>
 
 #include <catch2/catch_test_macros.hpp>
