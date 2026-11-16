@@ -7,6 +7,7 @@ target_sources(lib_scanner
     include/scanner/include.hpp
     include/scanner/scan.hpp
   PRIVATE FILE_SET private_headers TYPE HEADERS FILES
+    src/byte_visitors.hpp
     src/compile_command.hpp
     src/executable_path.hpp
     src/include_sets.hpp
@@ -71,7 +72,9 @@ target_sources(lib_scanner
 if(BUILD_TESTING)
   add_executable(lib_scanner_test)
   target_sources(lib_scanner_test
-    PRIVATE test/scan_test.cpp
+    PRIVATE
+      test/scan_test.cpp
+      test/byte_visitors_test.cpp
     )
   # allow access to private headers
   target_include_directories(lib_scanner_test
