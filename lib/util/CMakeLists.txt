@@ -6,6 +6,7 @@ target_sources(lib_util
   PUBLIC FILE_SET HEADERS BASE_DIRS include FILES
     include/util/arg_parser.hpp
     include/util/parallel_transformer.hpp
+    include/util/scope.hpp
     include/util/utils.hpp
   PRIVATE
     src/parallel_transformer.cpp
@@ -18,6 +19,7 @@ if(BUILD_TESTING)
     PRIVATE
       test/arg_parser_test.cpp
       test/parallel_transformer_test.cpp
+      test/scope_test.cpp
       test/utils_test.cpp
     )
   target_link_libraries(lib_util_test
