@@ -8,6 +8,8 @@
 #include <src/compile_command.hpp>
 #include <src/include_sets.hpp>
 #include <target_model/target_data.hpp>
+#include <util/byte_hasher.hpp>
+#include <util/hash.hpp>
 
 #include <clang/Basic/Diagnostic.h>
 #include <clang/Basic/DiagnosticOptions.h>
@@ -78,14 +80,22 @@ std::string_view to_string(Context context)
   std::unreachable();
 }
 
+struct Internal_data
+{
+  Include_sets include_sets;
+  std::vector<std::filesystem::path> transitive_includes;
+  util::Byte_hasher transitive_include_hasher;
+};
+
 class PPRecorder : public clang::PPCallbacks
 {
   const clang::Preprocessor& preprocessor_;
-  Include_data& include_data_;
+  Internal_data& internal_data_;
   const target_model::Target_data& target_data_;
 
   Source_line last_include_loc_;
   std::vector<Source_line> include_chain_;
+  std::filesystem::path main_source_file_;
   std::filesystem::path current_source_file_;
   Context context_{Context::arbitrary_file};
   int external_depth_ = 0;
@@ -94,12 +104,14 @@ class PPRecorder : public clang::PPCallbacks
 
   std::map<std::filesystem::path, Include_set> interface_header_includes_;
 
+  std::set<std::filesystem::path> transitive_include_set_;
+
 public:
   PPRecorder(const clang::Preprocessor& preprocessor,
-             Include_data& include_data,
+             Internal_data& internal_data,
              const target_model::Target_data& target_data)
   : preprocessor_(preprocessor),
-    include_data_(include_data),
+    internal_data_(internal_data),
     target_data_(target_data)
   {
     const auto main_fid = preprocessor_.getSourceManager().getMainFileID();
@@ -107,11 +119,16 @@ public:
           preprocessor_.getSourceManager().getFileEntryRefForID(main_fid);
         main_file_entry_ref.has_value())
     {
-      auto main_file = to_normal_path(main_file_entry_ref->getNameAsRequested().str());
-      in_private_ = target_model::is_private_source(target_data_, main_file);
+      main_source_file_ = to_normal_path(main_file_entry_ref->getNameAsRequested().str());
+      in_private_ = target_model::is_private_source(target_data_, main_source_file_);
       message::debug("main file {} is {} private source file",
-                     main_file.string(),
+                     main_source_file_.string(),
                      in_private_ ? "a" : "not a");
+    }
+    else
+    {
+      // TODO
+      assert(!"is this code path possible?");
     }
   }
 
@@ -178,6 +195,25 @@ public:
                        fid.getHashValue());
       }
 
+      if (!in_main_file && !in_system_)
+      {
+        auto relative_path =
+          current_source_file_.lexically_relative(main_source_file_.parent_path());
+        if (transitive_include_set_.insert(relative_path).second)
+        {
+          internal_data_.transitive_includes.push_back(relative_path);
+          std::optional<llvm::MemoryBufferRef> buffRef =
+            preprocessor_.getSourceManager().getBufferOrNone(fid);
+          assert(buffRef.has_value());
+
+          // Note: we are intentionally hashing hash values so we can cache file hashes when doing lookups. There should
+          // be sufficient collision prevention because we are using a 128-bit hash.
+          const auto file_hash = util::hash(
+            std::string_view(buffRef->getBufferStart(), buffRef->getBufferSize()));
+          internal_data_.transitive_include_hasher(file_hash);
+        }
+      }
+
       if (!last_include_loc_.source.empty())
       {
         include_chain_.emplace_back(last_include_loc_);
@@ -193,13 +229,13 @@ public:
         if (in_private_ && external_depth_ == 0)
         {
           message::debug("Private dependency added: {}", current_source_file_.string());
-          include_data_.include_sets.includes.emplace(Include{current_source_file_, include_chain_});
+          internal_data_.include_sets.includes.emplace(Include{current_source_file_, include_chain_});
         }
 
         if (previous_context == Context::interface_header)
         {
           message::debug("Interface dependency added: {}", current_source_file_.string());
-          include_data_.include_sets.interface_includes.emplace(
+          internal_data_.include_sets.interface_includes.emplace(
             Include{current_source_file_, {last_include_loc_}});
         }
       }
@@ -323,7 +359,7 @@ public:
           include_chain.insert(include_chain.end(),
                                e.include_chain.begin(),
                                e.include_chain.end());
-          include_data_.include_sets.includes.emplace(Include{e.path, include_chain});
+          internal_data_.include_sets.includes.emplace(Include{e.path, include_chain});
         }
       }
     }
@@ -335,14 +371,14 @@ public:
         message::debug("Private dependency added: {}", filename.string());
         auto include_chain = include_chain_;
         include_chain.emplace_back(last_include_loc_);
-        include_data_.include_sets.includes.emplace(Include{filename, include_chain});
+        internal_data_.include_sets.includes.emplace(Include{filename, include_chain});
       }
 
       if (context_ == Context::interface_header)
       {
         assert(!last_include_loc_.source.empty());
         message::debug("Interface dependency added: {}", filename.string());
-        include_data_.include_sets.interface_includes.emplace(Include{filename, {last_include_loc_}});
+        internal_data_.include_sets.interface_includes.emplace(Include{filename, {last_include_loc_}});
       }
     }
   }
@@ -350,16 +386,16 @@ public:
 
 class Action : public clang::PreprocessOnlyAction
 {
-  Include_data& include_data_;
+  Internal_data& internal_data_;
   const target_model::Target_data& target_data_;
 
   llvm::IntrusiveRefCntPtr<clang::tooling::dependencies::DependencyScanningWorkerFilesystem> dep_fs_;
 
 public:
-  Action(Include_data& include_data,
+  Action(Internal_data& internal_data,
          const target_model::Target_data& target_data,
          llvm::IntrusiveRefCntPtr<clang::tooling::dependencies::DependencyScanningWorkerFilesystem> dep_fs)
-  : include_data_(include_data),
+  : internal_data_(internal_data),
     target_data_(target_data),
     dep_fs_(std::move(dep_fs))
   {
@@ -387,7 +423,7 @@ private:
 
     auto& preprocessor = compiler_instance.getPreprocessor();
     preprocessor.addPPCallbacks(
-      std::make_unique<PPRecorder>(preprocessor, include_data_, target_data_));
+      std::make_unique<PPRecorder>(preprocessor, internal_data_, target_data_));
 
     PreprocessOnlyAction::ExecuteAction();
   }
@@ -396,11 +432,11 @@ private:
 class Action_factory : public clang::tooling::FrontendActionFactory
 {
 public:
-  Action_factory(Include_data& include_data,
+  Action_factory(Internal_data& internal_data,
                  const target_model::Target_data& target_data,
                  llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> file_system,
                  clang::tooling::dependencies::DependencyScanningFilesystemSharedCache& dep_cache)
-  : include_data_(include_data),
+  : internal_data_(internal_data),
     target_data_(target_data),
     file_system_(std::move(file_system)),
     dep_cache_(dep_cache)
@@ -419,11 +455,11 @@ public:
       llvm::IntrusiveRefCntPtr<clang::tooling::dependencies::DependencyScanningWorkerFilesystem>{
         new clang::tooling::dependencies::DependencyScanningWorkerFilesystem(dep_cache_,
                                                                              file_system_)};
-    return std::make_unique<Action>(include_data_, target_data_, std::move(dep_fs));
+    return std::make_unique<Action>(internal_data_, target_data_, std::move(dep_fs));
   }
 
 private:
-  Include_data& include_data_;
+  Internal_data& internal_data_;
   const target_model::Target_data& target_data_;
   llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> file_system_;
   clang::tooling::dependencies::DependencyScanningFilesystemSharedCache& dep_cache_;
@@ -440,8 +476,8 @@ std::expected<Include_data, std::string> scan_impl(
     return std::unexpected(std::format("Cannot chdir into {}", compile_command.cwd.string()));
   }
 
-  Include_data include_data;
-  Action_factory action_factory(include_data, target_data, file_system, dep_cache);
+  Internal_data internal_data;
+  Action_factory action_factory(internal_data, target_data, file_system, dep_cache);
   auto file_manager = llvm::IntrusiveRefCntPtr<clang::FileManager>{
     new clang::FileManager(clang::FileSystemOptions(), file_system)};
   auto pch_container_ops = std::make_shared<clang::PCHContainerOperations>();
@@ -456,6 +492,9 @@ std::expected<Include_data, std::string> scan_impl(
       std::format("Error while processing {}.\n", compile_command.source.string()));
   }
 
-  return include_data;
+  return Include_data{.include_sets = std::move(internal_data.include_sets),
+                      .transitive_includes = std::move(internal_data.transitive_includes),
+                      .transitive_includes_hash =
+                        internal_data.transitive_include_hasher.digest()};
 }
 } // namespace scanner

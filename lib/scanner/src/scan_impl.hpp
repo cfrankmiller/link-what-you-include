@@ -6,6 +6,7 @@
 #include <scanner/include.hpp>
 #include <scanner/scan.hpp>
 #include <src/include_sets.hpp>
+#include <util/hash.hpp>
 
 #include <expected>
 #include <string>
@@ -38,6 +39,8 @@ struct Compile_command;
 struct Include_data
 {
   Include_sets include_sets;
+  std::vector<std::filesystem::path> transitive_includes;
+  util::Hash_value transitive_includes_hash;
 };
 
 std::expected<Include_data, std::string> scan_impl(

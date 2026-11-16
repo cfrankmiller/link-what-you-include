@@ -5,12 +5,14 @@
 
 #include <message/message.hpp>
 #include <relative_resource_dir.hpp>
+#include <src/cache.hpp>
 #include <src/compile_command.hpp>
 #include <src/executable_path.hpp>
 #include <src/include_sets.hpp>
 #include <src/merge_includes.hpp>
 #include <src/scan_impl.hpp>
 #include <target_model/target_data.hpp>
+#include <util/hashed_file_view.hpp>
 #include <util/parallel_transformer.hpp>
 
 #include <clang/Tooling/ArgumentsAdjusters.h>
@@ -35,16 +37,22 @@ namespace scanner
 {
 struct Scanner::Impl
 {
-  explicit Impl(size_t thread_count)
-  : transformer(thread_count)
+  explicit Impl(size_t thread_count,
+                std::unique_ptr<util::Key_value_store> store,
+                std::unique_ptr<util::Hashed_file_view> hashed_file_view)
+  : transformer(thread_count),
+    cache(std::move(store), std::move(hashed_file_view))
   {
   }
 
   util::Parallel_transformer transformer;
+  Cache cache;
 };
 
 Scanner::Scanner(size_t thread_count)
-: impl_(std::make_unique<Impl>(thread_count))
+: impl_(std::make_unique<Impl>(thread_count,
+                               util::default_key_value_store("/home/frank/tmp/lwyi_cache"),
+                               std::make_unique<util::Hashed_file_view>()))
 {
 }
 
@@ -138,14 +146,20 @@ std::expected<Intransitive_includes, std::string> Scanner::scan(
     compile_commands.begin(),
     compile_commands.end(),
     include_sets_array.begin(),
-    [&](const Compile_command& compile_command)
+    [&](const Compile_command& compile_command) -> std::expected<Include_sets, std::string>
     {
+      if (auto result = impl_->cache.read(compile_command, target_data))
+      {
+        return *result;
+      }
+
       auto file_system = llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>{
         llvm::vfs::createPhysicalFileSystem()};
       return scan_impl(file_system, dep_cache, target_data, compile_command)
         .transform(
-          [](const Include_data& include_data)
+          [&](const Include_data& include_data)
           {
+            impl_->cache.write(compile_command, target_data, include_data);
             return include_data.include_sets;
           });
     });

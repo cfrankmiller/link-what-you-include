@@ -8,12 +8,14 @@ target_sources(lib_scanner
     include/scanner/scan.hpp
   PRIVATE FILE_SET private_headers TYPE HEADERS FILES
     src/byte_visitors.hpp
+    src/cache.hpp
     src/compile_command.hpp
     src/executable_path.hpp
     src/include_sets.hpp
     src/merge_includes.hpp
     src/scan_impl.hpp
   PRIVATE
+    src/cache.cpp
     src/executable_path.cpp
     src/merge_includes.cpp
     src/scan.cpp
@@ -22,8 +24,8 @@ target_sources(lib_scanner
 target_link_libraries(lib_scanner
   PRIVATE
     lib_message
-    lib_util
     lib_target_model
+    lib_util
     clangDependencyScanning
     clangTooling
   )
