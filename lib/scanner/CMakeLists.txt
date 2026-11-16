@@ -87,6 +87,7 @@ if(BUILD_TESTING)
       Catch2::Catch2WithMain
       clangTooling
       lib_message
+      lib_util # TODO needed to test a private header
     )
   catch_discover_tests(lib_scanner_test ADD_TAGS_AS_LABELS)
 endif()
