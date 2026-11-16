@@ -78,6 +78,8 @@ else()
   message(FATAL_ERROR "Failed to find simdjson version 4.2 or 4.6.")
 endif()
 
+find_package(xxHash 0.8 REQUIRED)
+
 if(BUILD_TESTING)
   find_package(Catch2 3.7 REQUIRED)
   include(Catch)

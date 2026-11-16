@@ -110,6 +110,7 @@ jobs:
           bash ./tools/build_catch2.sh
           bash ./tools/build_clangtooling.sh
           bash ./tools/build_simdjson.sh
+          bash ./tools/build_xxhash.sh
 
       - name: Cache 3rdparty
         id: cache-3rdparty-save
