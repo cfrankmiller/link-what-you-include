@@ -16,6 +16,7 @@ target_sources(lib_util
     include/util/byte_visitor/vector.hpp
     include/util/hash.hpp
     include/util/hashed_file_view.hpp
+    include/util/key_value_store.hpp
     include/util/parallel_transformer.hpp
     include/util/scope.hpp
     include/util/utils.hpp
@@ -23,6 +24,7 @@ target_sources(lib_util
     src/byte_hasher.cpp
     src/hash.cpp
     src/hashed_file_view.cpp
+    src/key_value_store.cpp
     src/parallel_transformer.cpp
     src/utils.cpp
   )
@@ -37,6 +39,7 @@ if(BUILD_TESTING)
       test/byte_reader_writer_test.cpp
       test/hashed_file_view_test.cpp
       test/hash_test.cpp
+      test/key_value_store_test.cpp
       test/parallel_transformer_test.cpp
       test/scope_test.cpp
       test/utils_test.cpp
