@@ -6,11 +6,13 @@ target_sources(lib_util
   PUBLIC FILE_SET HEADERS BASE_DIRS include FILES
     include/util/arg_parser.hpp
     include/util/hash.hpp
+    include/util/hashed_file_view.hpp
     include/util/parallel_transformer.hpp
     include/util/scope.hpp
     include/util/utils.hpp
   PRIVATE
     src/hash.cpp
+    src/hashed_file_view.cpp
     src/parallel_transformer.cpp
     src/utils.cpp
   )
@@ -21,6 +23,7 @@ if(BUILD_TESTING)
   target_sources(lib_util_test
     PRIVATE
       test/arg_parser_test.cpp
+      test/hashed_file_view_test.cpp
       test/hash_test.cpp
       test/parallel_transformer_test.cpp
       test/scope_test.cpp
