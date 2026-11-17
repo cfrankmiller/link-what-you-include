@@ -191,16 +191,22 @@ public:
       {
         if (in_private_ && external_depth_ == 0)
         {
-          message::debug("Private dependency added: {}", current_source_file_.string());
-          include_data_.include_sets.includes.emplace(
-            Include{current_source_file_, include_chain_});
+          if (include_data_.include_sets.includes
+                .emplace(current_source_file_, include_chain_)
+                .second)
+          {
+            message::debug("Private dependency added: {}", current_source_file_.string());
+          }
         }
 
         if (previous_context == Context::interface_header)
         {
-          message::debug("Interface dependency added: {}", current_source_file_.string());
-          include_data_.include_sets.interface_includes.emplace(
-            Include{current_source_file_, {last_include_loc_}});
+          if (include_data_.include_sets.interface_includes
+                .emplace(current_source_file_, std::vector<Source_line>{last_include_loc_})
+                .second)
+          {
+            message::debug("Interface dependency added: {}", current_source_file_.string());
+          }
         }
       }
 
@@ -252,9 +258,14 @@ public:
 
             if (context_ == Context::interface_header)
             {
-              message::debug("Interface dependency added: {}", current_source_file_.string());
-              include_data_.include_sets.interface_includes.emplace(include.path,
-                                                                    include_chain);
+              if (include_data_.include_sets.interface_includes
+                    .emplace(include.path, include_chain)
+                    .second)
+              {
+                message::debug("Interface dependency added: {}",
+                               current_source_file_.string());
+              }
+                
             }
           }
         }
@@ -322,13 +333,15 @@ public:
         message::debug("Dependency propagation");
         for (const auto& e : it->second)
         {
-          message::debug("Private dependency added: {}", e.path.string());
           auto include_chain = include_chain_;
           include_chain.emplace_back(last_include_loc_);
           include_chain.insert(include_chain.end(),
                                e.include_chain.begin(),
                                e.include_chain.end());
-          include_data_.include_sets.includes.emplace(Include{e.path, include_chain});
+          if (include_data_.include_sets.includes.emplace(e.path, include_chain).second)
+          {
+            message::debug("Private dependency added: {}", e.path.string());
+          }
         }
       }
     }
@@ -337,18 +350,23 @@ public:
       if (in_private_)
       {
         assert(!last_include_loc_.source.empty());
-        message::debug("Private dependency added: {}", filename.string());
         auto include_chain = include_chain_;
         include_chain.emplace_back(last_include_loc_);
-        include_data_.include_sets.includes.emplace(Include{filename, include_chain});
+        if (include_data_.include_sets.includes.emplace(filename, include_chain).second)
+        {
+          message::debug("Private dependency added: {}", filename.string());
+        }
       }
 
       if (context_ == Context::interface_header)
       {
         assert(!last_include_loc_.source.empty());
-        message::debug("Interface dependency added: {}", filename.string());
-        include_data_.include_sets.interface_includes.emplace(
-          Include{filename, {last_include_loc_}});
+        if (include_data_.include_sets.interface_includes
+              .emplace(filename, std::vector<Source_line>{last_include_loc_})
+              .second)
+        {
+          message::debug("Interface dependency added: {}", filename.string());
+        }
       }
     }
   }
