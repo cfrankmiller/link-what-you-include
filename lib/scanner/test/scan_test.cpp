@@ -63,9 +63,23 @@ llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> make_file_system()
     new llvm::vfs::InMemoryFileSystem};
 }
 
+void add_file(llvm::vfs::InMemoryFileSystem& fs, const std::filesystem::path& path, const char* content)
+{
+  fs.addFile(path.string(), 0, llvm::MemoryBuffer::getMemBuffer(content));
+}
+
 void add_file(llvm::vfs::InMemoryFileSystem& fs, const char* path, const char* content)
 {
   fs.addFile(path, 0, llvm::MemoryBuffer::getMemBuffer(content));
+}
+
+std::filesystem::path fake_cwd()
+{
+#ifdef _WIN32
+  return "C:/test";
+#else
+  return "/test";
+#endif
 }
 } // namespace
 
@@ -938,33 +952,37 @@ TEST_CASE("scanner: scan treats files included on the command line as a private 
   //
   // Where: a.hpp is included on the command line
   auto fs = make_file_system();
-  add_file(*fs, "/a.hpp", R"(
+  const auto cwd = fake_cwd();
+  add_file(*fs, cwd / "a.hpp", R"(
     #include "b.hpp"
     )");
-  add_file(*fs, "/b.hpp", "");
-  add_file(*fs, "/c.hpp", "");
-  add_file(*fs, "/d.hpp", "");
-  add_file(*fs, "/interface.hpp", R"(
+  add_file(*fs, cwd / "b.hpp", "");
+  add_file(*fs, cwd / "c.hpp", "");
+  add_file(*fs, cwd / "d.hpp", "");
+  add_file(*fs, cwd / "interface.hpp", R"(
     #include "c.hpp"
     )");
-  add_file(*fs, "/private.cpp", R"(
+  add_file(*fs, cwd / "private.cpp", R"(
     #include "interface.hpp"
     #include "d.hpp"
     )");
   target_model::Target_data target_data;
-  target_data.interface_headers = {"/interface.hpp"};
-  target_data.sources = {"/private.cpp"};
+  target_data.interface_headers = {cwd / "interface.hpp"};
+  target_data.sources = {cwd / "private.cpp"};
 
-  scanner::Compile_command compile_commands{"/", "/private.cpp", {"clang", "/private.cpp", "-include", "/a.hpp"}};
+  scanner::Compile_command compile_commands{
+    cwd,
+    cwd / "private.cpp",
+    {"clang", (cwd / "private.cpp").string(), "-include", (cwd / "a.hpp").string()}};
 
   // Expect:
   //   interface includes: c.hpp
   //   includes:           a.hpp, c.hpp
   scanner::Include_sets expected{
-    .interface_includes = {{"/c.hpp", {{"/interface.hpp", 2}}}},
-    .includes = {{"/a.hpp", {{"", 1}}},
-                 {"/c.hpp", {{"/private.cpp", 2}, {"/interface.hpp", 2}}},
-                 {"/d.hpp", {{"/private.cpp", 3}}}}};
+    .interface_includes = {{cwd / "c.hpp", {{cwd / "interface.hpp", 2}}}},
+    .includes = {{cwd / "a.hpp", {{"", 1}}},
+                 {cwd / "c.hpp", {{cwd / "private.cpp", 2}, {cwd / "interface.hpp", 2}}},
+                 {cwd / "d.hpp", {{cwd / "private.cpp", 3}}}}};
 
   clang::tooling::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
   auto output = scanner::scan_impl(fs, dep_cache, target_data, compile_commands);
@@ -990,52 +1008,61 @@ TEST_CASE("scanner: scan collects transitive includes from a command line privat
   //
   // Where: private_1.hpp is included on the command line
   auto fs = make_file_system();
-  add_file(*fs, "/a.hpp", "");
-  add_file(*fs, "/b.hpp", "");
-  add_file(*fs, "/c.hpp", "");
-  add_file(*fs, "/d.hpp", "");
-  add_file(*fs, "/e.hpp", "");
-  add_file(*fs, "/private_1.hpp", R"(
+  const auto cwd = fake_cwd();
+  add_file(*fs, cwd / "a.hpp", "");
+  add_file(*fs, cwd / "b.hpp", "");
+  add_file(*fs, cwd / "c.hpp", "");
+  add_file(*fs, cwd / "d.hpp", "");
+  add_file(*fs, cwd / "e.hpp", "");
+  add_file(*fs, cwd / "private_1.hpp", R"(
     #include "private_2.hpp"
     #include "a.hpp"
     )");
-  add_file(*fs, "/private_2.hpp", R"(
+  add_file(*fs, cwd / "private_2.hpp", R"(
     #include "private_3.hpp"
     #include "b.hpp"
     )");
-  add_file(*fs, "/private_3.hpp", R"(
+  add_file(*fs, cwd / "private_3.hpp", R"(
     #include "c.hpp"
     )");
-  add_file(*fs, "/private_4.hpp", R"(
+  add_file(*fs, cwd / "private_4.hpp", R"(
     #include "d.hpp"
     )");
-  add_file(*fs, "/private.cpp", R"(
+  add_file(*fs, cwd / "private.cpp", R"(
     #include "private_4.hpp"
     #include "e.hpp"
     )");
   target_model::Target_data target_data;
   target_data.interface_headers = {};
-  target_data.sources = {"/private.cpp",
-                         "/private_1.hpp",
-                         "/private_2.hpp",
-                         "/private_3.hpp",
-                         "/private_4.hpp"};
+  target_data.sources = {cwd / "private.cpp",
+                         cwd / "private_1.hpp",
+                         cwd / "private_2.hpp",
+                         cwd / "private_3.hpp",
+                         cwd / "private_4.hpp"};
 
   scanner::Compile_command compile_commands{
-    "/",
-    "/private.cpp",
-    {"clang", "/private.cpp", "-include", "/private_1.hpp"}};
+    cwd,
+    cwd / "private.cpp",
+    {"clang", (cwd / "private.cpp").string(), "-include", (cwd / "private_1.hpp").string()}};
 
   // Expect:
   //   interface includes: e.hpp
   //   includes:           a.hpp, b.hpp, c.hpp, d.hpp
   scanner::Include_sets expected{
     .interface_includes = {},
-    .includes = {{"/a.hpp", {{"", 1}, {"/private_1.hpp", 3}}},
-                 {"/b.hpp", {{"", 1}, {"/private_1.hpp", 2}, {"/private_2.hpp", 3}}},
-                 {"/c.hpp", {{"", 1}, {"/private_1.hpp", 2}, {"/private_2.hpp", 2}, {"/private_3.hpp", 2}}},
-                 {"/d.hpp", {{"/private.cpp", 2}, {"/private_4.hpp", 2}}},
-                 {"/e.hpp", {{"/private.cpp", 3}}}}};
+    .includes =
+      {
+        {cwd / "a.hpp", {{"", 1}, {cwd / "private_1.hpp", 3}}},
+        {cwd / "b.hpp", {{"", 1}, {cwd / "private_1.hpp", 2}, {cwd / "private_2.hpp", 3}}},
+        {cwd / "c.hpp",
+         {{"", 1},
+          {cwd / "private_1.hpp", 2},
+          {cwd / "private_2.hpp", 2},
+          {cwd / "private_3.hpp", 2}}},
+        {cwd / "d.hpp", {{cwd / "private.cpp", 2}, {cwd / "private_4.hpp", 2}}},
+        {cwd / "e.hpp", {{cwd / "private.cpp", 3}}},
+      },
+  };
 
   clang::tooling::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
   auto output = scanner::scan_impl(fs, dep_cache, target_data, compile_commands);
@@ -1061,54 +1088,65 @@ TEST_CASE("scanner: scan collects transitive includes from a command line interf
   //
   // Where: interface_1.hpp is included on the command line
   auto fs = make_file_system();
-  add_file(*fs, "/a.hpp", "");
-  add_file(*fs, "/b.hpp", "");
-  add_file(*fs, "/c.hpp", "");
-  add_file(*fs, "/d.hpp", "");
-  add_file(*fs, "/e.hpp", "");
-  add_file(*fs, "/interface_1.hpp", R"(
+  const auto cwd = fake_cwd();
+  add_file(*fs, cwd / "a.hpp", "");
+  add_file(*fs, cwd / "b.hpp", "");
+  add_file(*fs, cwd / "c.hpp", "");
+  add_file(*fs, cwd / "d.hpp", "");
+  add_file(*fs, cwd / "e.hpp", "");
+  add_file(*fs, cwd / "interface_1.hpp", R"(
     #include "interface_2.hpp"
     #include "a.hpp"
     )");
-  add_file(*fs, "/interface_2.hpp", R"(
+  add_file(*fs, cwd / "interface_2.hpp", R"(
     #include "interface_3.hpp"
     #include "b.hpp"
     )");
-  add_file(*fs, "/interface_3.hpp", R"(
+  add_file(*fs, cwd / "interface_3.hpp", R"(
     #include "c.hpp"
     )");
-  add_file(*fs, "/interface_4.hpp", R"(
+  add_file(*fs, cwd / "interface_4.hpp", R"(
     #include "d.hpp"
     )");
-  add_file(*fs, "/private.cpp", R"(
+  add_file(*fs, cwd / "private.cpp", R"(
     #include "interface_4.hpp"
     #include "e.hpp"
     )");
   target_model::Target_data target_data;
-  target_data.interface_headers = {"/interface_1.hpp",
-                                   "/interface_2.hpp",
-                                   "/interface_3.hpp",
-                                   "/interface_4.hpp"};
-  target_data.sources = {"/private.cpp"};
+  target_data.interface_headers = {cwd / "interface_1.hpp",
+                                   cwd / "interface_2.hpp",
+                                   cwd / "interface_3.hpp",
+                                   cwd / "interface_4.hpp"};
+  target_data.sources = {cwd / "private.cpp"};
 
-  scanner::Compile_command compile_commands{
-    "/",
-    "/private.cpp",
-    {"clang", "/private.cpp", "-include", "/interface_1.hpp"}};
+  scanner::Compile_command compile_commands{cwd,
+                                            cwd / "private.cpp",
+                                            {"clang",
+                                             (cwd / "private.cpp").string(),
+                                             "-include",
+                                             (cwd / "interface_1.hpp").string()}};
 
   // Expect:
   //   interface includes: e.hpp
   //   includes:           a.hpp, b.hpp, c.hpp, d.hpp
   scanner::Include_sets expected{
-    .interface_includes = {{"/a.hpp", {{"/interface_1.hpp", 3}}},
-                           {"/b.hpp", {{"/interface_2.hpp", 3}}},
-                           {"/c.hpp", {{"/interface_3.hpp", 2}}},
-                           {"/d.hpp", {{"/interface_4.hpp", 2}}}},
-    .includes = {{"/a.hpp", {{"", 1}, {"/interface_1.hpp", 3}}},
-                 {"/b.hpp", {{"", 1}, {"/interface_1.hpp", 2}, {"/interface_2.hpp", 3}}},
-                 {"/c.hpp", {{"", 1}, {"/interface_1.hpp", 2}, {"/interface_2.hpp", 2}, {"/interface_3.hpp", 2}}},
-                 {"/d.hpp", {{"/private.cpp", 2}, {"/interface_4.hpp", 2}}},
-                 {"/e.hpp", {{"/private.cpp", 3}}}}};
+    .interface_includes = {{cwd / "a.hpp", {{cwd / "interface_1.hpp", 3}}},
+                           {cwd / "b.hpp", {{cwd / "interface_2.hpp", 3}}},
+                           {cwd / "c.hpp", {{cwd / "interface_3.hpp", 2}}},
+                           {cwd / "d.hpp", {{cwd / "interface_4.hpp", 2}}}},
+    .includes =
+      {
+        {cwd / "a.hpp", {{"", 1}, {cwd / "interface_1.hpp", 3}}},
+        {cwd / "b.hpp", {{"", 1}, {cwd / "interface_1.hpp", 2}, {cwd / "interface_2.hpp", 3}}},
+        {cwd / "c.hpp",
+         {{"", 1},
+          {cwd / "interface_1.hpp", 2},
+          {cwd / "interface_2.hpp", 2},
+          {cwd / "interface_3.hpp", 2}}},
+        {cwd / "d.hpp", {{cwd / "private.cpp", 2}, {cwd / "interface_4.hpp", 2}}},
+        {cwd / "e.hpp", {{cwd / "private.cpp", 3}}},
+      },
+  };
 
   clang::tooling::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
   auto output = scanner::scan_impl(fs, dep_cache, target_data, compile_commands);
@@ -1127,39 +1165,46 @@ TEST_CASE("scanner: scan sees all files included on the command line", "[scanner
   //
   // Where: a.hpp, c.hpp, and e.hpp are included on the command line
   auto fs = make_file_system();
-  add_file(*fs, "/a.hpp", R"(
+  const auto cwd = fake_cwd();
+  add_file(*fs, cwd / "a.hpp", R"(
     #include "b.hpp"
     )");
-  add_file(*fs, "/b.hpp", "");
-  add_file(*fs, "/c.hpp", R"(
+  add_file(*fs, cwd / "b.hpp", "");
+  add_file(*fs, cwd / "c.hpp", R"(
     #include "d.hpp"
     )");
-  add_file(*fs, "/d.hpp", "");
-  add_file(*fs, "/e.hpp", R"(
+  add_file(*fs, cwd / "d.hpp", "");
+  add_file(*fs, cwd / "e.hpp", R"(
     #include "f.hpp"
     )");
-  add_file(*fs, "/f.hpp", "");
-  add_file(*fs, "/g.hpp", "");
-  add_file(*fs, "/private.cpp", R"(
+  add_file(*fs, cwd / "f.hpp", "");
+  add_file(*fs, cwd / "g.hpp", "");
+  add_file(*fs, cwd / "private.cpp", R"(
     #include "g.hpp"
     )");
   target_model::Target_data target_data;
   target_data.interface_headers = {};
-  target_data.sources = {"/private.cpp"};
+  target_data.sources = {cwd / "private.cpp"};
 
-  scanner::Compile_command compile_commands{
-    "/",
-    "/private.cpp",
-    {"clang", "/private.cpp", "-include", "/a.hpp", "-include", "/c.hpp", "-include", "/e.hpp"}};
+  scanner::Compile_command compile_commands{cwd,
+                                            cwd / "private.cpp",
+                                            {"clang",
+                                             (cwd / "private.cpp").string(),
+                                             "-include",
+                                             (cwd / "a.hpp").string(),
+                                             "-include",
+                                             (cwd / "c.hpp").string(),
+                                             "-include",
+                                             (cwd / "e.hpp").string()}};
 
   // Expect:
   //   interface includes:
   //   includes:           a.hpp, c.hpp, e.hpp, g.hpp
   scanner::Include_sets expected{.interface_includes = {},
-                                 .includes = {{"/a.hpp", {{"", 1}}},
-                                              {"/c.hpp", {{"", 2}}},
-                                              {"/e.hpp", {{"", 3}}},
-                                              {"/g.hpp", {{"/private.cpp", 2}}}}};
+                                 .includes = {{cwd / "a.hpp", {{"", 1}}},
+                                              {cwd / "c.hpp", {{"", 2}}},
+                                              {cwd / "e.hpp", {{"", 3}}},
+                                              {cwd / "g.hpp", {{cwd / "private.cpp", 2}}}}};
 
   clang::tooling::dependencies::DependencyScanningFilesystemSharedCache dep_cache;
   auto output = scanner::scan_impl(fs, dep_cache, target_data, compile_commands);
