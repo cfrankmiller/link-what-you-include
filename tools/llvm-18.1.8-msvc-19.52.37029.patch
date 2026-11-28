@@ -1,0 +1,21 @@
+diff -ruN src.bac/clang/include/clang/Basic/Diagnostic.h src/clang/include/clang/Basic/Diagnostic.h
+--- src.bac/clang/include/clang/Basic/Diagnostic.h	2026-11-23 20:54:54.721542600 -0800
++++ src/clang/include/clang/Basic/Diagnostic.h	2026-11-27 15:45:46.228731300 -0800
+@@ -577,7 +577,7 @@
+ 
+   /// Return the current diagnostic client along with ownership of that
+   /// client.
+-  std::unique_ptr<DiagnosticConsumer> takeClient() { return std::move(Owner); }
++  std::unique_ptr<DiagnosticConsumer> takeClient();
+ 
+   bool hasSourceManager() const { return SourceMgr != nullptr; }
+ 
+@@ -1851,6 +1851,8 @@
+                            const DiagnosticOptions &Opts,
+                            bool ReportDiags = true);
+ void EscapeStringForDiagnostic(StringRef Str, SmallVectorImpl<char> &OutStr);
++
++inline std::unique_ptr<DiagnosticConsumer> DiagnosticsEngine::takeClient() { return std::move(Owner); }
+ } // namespace clang
+ 
+ #endif // LLVM_CLANG_BASIC_DIAGNOSTIC_H

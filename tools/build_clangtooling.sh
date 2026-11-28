@@ -24,6 +24,7 @@ if [ ! -d "$work_dir/src" ]; then
   mv "cmake-${version}.src" "$work_dir/src/cmake"
   mv "llvm-${version}.src" "$work_dir/src/llvm"
   patch -d $work_dir/src -p1 < $root_dir/tools/llvm-18.1.8-gcc-15.patch
+  patch -d $work_dir/src -p1 < $root_dir/tools/llvm-18.1.8-msvc-19.52.37029.patch
 fi
 
 cmake --fresh \
